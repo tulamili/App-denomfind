@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+
+#
+# denomfind 
+#    小数がいくつか与えられたら、それはどんな(共通する)分母の分数であるかを推定する
+#   -- developed by 下野寿之 Toshiyuki Shimono in Tokyo, Japan, 
+#   -- first developed probably on 2016-06-20
+#   -- one debugging on -% and -c on 2022-10-11 
+#
+
+use 5.010 ; use warnings ;  # 5.014 で動作確認済み
+use Getopt::Std ; getopts 'cfirm:v:%' , \my%o ; 
+use POSIX qw[ ceil floor ] ; 
+use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
+sub decDig ( $ ) ; # 小数点以下が何桁であるか。
+sub numInts ( $$ ) ; # 引数(x,y)が与えられた時に、区間[x,y)または(y,x]の半区間に整数が、何個含まれるか
+
+HELP_MESSAGE () unless @ARGV ; 
+$o{m} //= 20 ; # 分母の最大値
+$o{v} //= '' ; # 出力情報の冗長度。0なら分子数値範囲を見せない。1なら無着色。
+& main ; 
+exit 0 ;
+
+sub main ( ) { 
+  do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } unless $o{i} ; 
+  my @nums = & readNums ; 
+	my ( @nA , @nB ) ; # 区間の 閉じた端A と 開いた端B
+	do { my ( $A , $B ) = realInt ( $_ ) ; push @nA, $A ; push @nB, $B } for @nums ; 
+	for ( my $denom = 1 ; $denom <= $o{m} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
+		my $kosu = 0 ; # 該当個数(こすう) 
+    my @out = () ; # 出力文字列
+		push @out , "$denom:" ;
+		for my $i ( 0 .. $#nums ) { 
+			my ($mA,$mB) = ( "$nA[$i]" * "$denom" , "$nB[$i]" * "$denom" ) ; # 分子の数値に対応
+			my $int1 = numInts ( "$mA" , "$mB" ) ? 1 : 0 ; # 区間に整数を含むか否か
+      $kosu ++ if $int1 ;
+      next if $o{v} eq "0" ;
+      my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
+      push @out , $int1 && $o{v} ne '1' ? GREEN $str : $str ; 
+		}
+		$kosu .= $kosu == @nums ? "*" : $kosu == @nums - 1 ? "-" : '' ; # 見て分かりやすい印をつける
+    splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
+    say join "\t" , @out ; 
+  }
+}
+
+# 半区間 [ $x , $y ) when $x<$y または ( $y , $x ] when $y<$x に、何個の整数が含まれるか。
+sub numInts ( $$ ) { 
+	my ( $x, $y ) = @_  ;
+	return $x < $y ? ceil($y) - ceil($x) : floor($x) - floor($y) ; 
+}
+
+sub realInt ( $ ) { # 1個の数に対し、区間表記 [A,B) または B<Aなら(B,A] のつもりで、AとBの順に返す。<-- - 
+	my $e2 = "0.1" ** decDig $_[0] ; # 10進数文字列を使っている。これで、内部2進数の問題を回避。
+  # 変える長さ2の配列の要素は、意図する半開区間に対して、1番目は閉じた方であり、2番目は開いた方である。
+  return $_[0] , "$_[0]" - "$e2" if $o{c} ; # 切り上げの場合
+  return $_[0] , "$_[0]" + "$e2" if $o{f} ; # 切り捨ての場合
+  my $e1 = "$e2" * "0.5" ;   # 区間の半分の幅である。
+  return "$_[0]" - "$e1" , "$_[0]" + "$e1" ; # 四捨五入の場合
+}
+
+sub decDig ( $ ) { # 「小数点以下に数が何桁あるか」を小数点の位置から算出して返す
+  my $pos = rindex $_[0] , '.' ; 
+  return $pos == -1 ? 0 : length ( $_[0] ) - ( $pos + 1 ) ; 
+}
+
+sub readNums ( ) { 
+	my @nums = () ; 
+	while ( <> ) { chomp ; push @nums , $_ } ; # オプション-iを使うため。
+  if ( $o{'%'} ) { ## 百分率の場合の処理 
+    for ( @nums ) {
+      my $d = decDig $_ ;
+   	  $_ = "$_" * "0.01" ; 
+      $_ .= '.00' if ! /\./ ; # 小数点が無い場合
+      $_ .= '0' if /\.\d$/ ; # 小数点以下1桁の場合 (20%を0.2ではなく0.20としたいため。<-- しかし0.2としたい場合は?)
+      $_ .= '0' x $d ; # その上で、元の数の小数点以下桁数と同じだけ0を、後ろに付加する。
+    }
+  } 
+	return @nums ; 
+}
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+=head1
+
+ $0 
+
+   小数がA個与えられたら、それらがどんな共通する分母の、分数であったかの推定を
+   するための数値計算プログラム。切り捨てと切り上げも仮定できるが、未指定なら四捨五入を仮定。
+
+ 出力の読み方: 
+   1列目:  N:  Nは共通する分母を表す
+   2列目:  B   Nが分母と仮定した場合の、分子が整数になり得る場合の個数を数える。B=Aなら「*」 B=A-1なら「-」を後ろに付与。
+   3列目以降のA本の列: 各列は、与えられた数値にそれぞれ対応する分子になり得る数値の範囲を半区間表記で示す。
+
+ 使用例: 
+    $0 -m 50 0.25 0.33 
+     # 四捨五入して、0.25 と 0.33 になるような分数で同じ分母を持つものを見つける。
+     # 出力される各行の最終行が 2 となるものを探せば良い。
+
+ オブション: 
+
+  -v 0 : 通常は、分子の数値を知るべくその半区間を表示するが、 -v 0 でそれをしない。(verbose)
+  -v 1 : 半開区間の表示に色を着けない。
+  -m num : 分母の数をどこまで大きくするか。未指定なら20。"Inf" も指定可能。(max-denominator)
+
+  -c : 入力された数は、切り上げられた数であるとみなす。(ceil)
+  -f : 入力された数は、切り捨てられた数であると見なす。(floor)
+
+  -% : 入力された数はパーセンテージ表記(百分率)であると見なし、内部的には100分の1倍される。
+  -i : 数をコマンド引数でなくて、標準入力または引数で指定されるファイルの中から読み取る。
+
+  ここで言う半区間とは、数学的な区間[x,y)または(x,y]のような、それぞれ、x以上y未満、x超y以下のような数全体を表している。
+
+  開発メモ: 
+     * 引数に並べた数の小数点以下の桁数で、出力すべき最大数は決まるので、自動的に決めても良い。
+     * 最大何個をとりだすかを指定したい。 -g か何かで。
+     * -m のオプションで、既に見つけた数の倍数は表示しないようにしたい。
+     * ただ1個の小数点以下8桁の数が渡された場合の良いアルゴリズムを考えたい。
+     * 使用時に使い易いように、さらにオプションを整理しよう。
+=cut

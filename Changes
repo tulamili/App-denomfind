@@ -1,0 +1,6 @@
+
+Revision history for the module "App::denomfind"
+
+-.---  2018-06-15 CLI:Numbers::Hack@0.21 に denomfind を収録。それより前は Mercurial で管理。
+0.250  2022-10-11 重大な計算結果のバグを見つけた(20.0%に対する誤った結果)ので、デバッグ。
+
