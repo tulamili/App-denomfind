@@ -8,8 +8,8 @@
 #   -- one debugging on -% and -c on 2022-10-11 
 #
 
-use 5.010 ; use strict ; use warnings ;  # 5.014 で動作確認済み
-use Getopt::Std ; getopts 'cd:fg:v:%' , \my%o ; 
+use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
+use Getopt::Std ; getopts 'cD:fg:v:%' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 #sub decDig ( $ ) ; # 小数点以下が何桁であるか。
@@ -27,11 +27,11 @@ sub main ( ) {
   my ( @nA , @nB ) ; # 区間の 閉じた端A と 開いた端B
   do { my ( $A , $B ) = realInt ( $_ ) ; push @nA, $A ; push @nB, $B } for @nums ; 
 
-  do { 
+  do { # 出力の1行目
     my @seq = 1 .. $#nums+1 ;
-    my @out = qw[denom: fitq] ; 
+    my @out = qw[denom fit] ; 
     push @out , map ( "numerator_$_" , @seq ) unless $o{v} eq "0" ; 
-    push @out , map { CYAN "formula_$_" } @seq if exists $o{d} ;
+    push @out , map { CYAN "f$_:".$nums[$_-1] } @seq if exists $o{D} ;
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
 
@@ -39,27 +39,28 @@ sub main ( ) {
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @out2 = () ; 
-    push @out , "$denom:" ;
+    push @out , "$denom" ; # コロン(:)を以前付与していた
     for my $i ( 0 .. $#nums ) { 
       my ($mA,$mB) = ( "$nA[$i]" * "$denom" , "$nB[$i]" * "$denom" ) ; # 分子の数値に対応
       my @int = numInts ( $mA , $mB ) ; #? 1 : 0 ; # 区間に整数を含むか否か
       $kosu ++ if @int ;
-      next if $o{v} eq "0" ;
-      my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
-      push @out , @int && $o{v} ne '1' ? GREEN $str : $str ; 
-      next unless exists $o{d} ;
-      if ( @int ) { 
-        my $d = decDig ( "$nA[$i]" ) + $o{d}   ; # 0 と書いても 1桁増えると言える。 # <- それと、無駄な計算もしている
-        #print RED "[$nA[$i];$nB[$i]]" ;
-        my $A = "$int[0]/$denom=" . sprintf "%0.${d}f" , $int[0]/$denom ; 
-        my $B = "$int[-1]/$denom=" . sprintf "%0.${d}f" , $int[-1]/$denom ; 
+      unless ( $o{v} eq "0" ) {
+        my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
+        push @out , @int ? GREEN $str : $str ; 
+      }
+      next unless exists $o{D} ;
+      if ( @int == 0 ) { 
+        push @out2 , CYAN '-' if @int == 0 ;
+      } else { 
+        my $d = $o{D} ; #decDig ( "$nA[$i]" ) + $o{D}   ; # 0 と書いても 1桁増えると言える。 # <- それと、無駄な計算もしている
+        my $A = "$int[0]/$denom=" . (sprintf "%0.${d}f" , $int[0]/$denom ) =~ s/^0+//r ; 
+        my $B = "$int[-1]/$denom=" . (sprintf "%0.${d}f" , $int[0]/$denom ) =~ s/^0+//r ; 
         push @out2 , CYAN $A if @int == 1 ; 
         push @out2 , CYAN "$A;$B" if @int == 2 ; 
-      } else { 
-        push @out2 , CYAN '-' if @int == 0 ;
-      }
+      } 
     }
-    $kosu .= $kosu == @nums ? '+00' : $kosu == @nums - 1 ? '-0' : '' ; # 見て分かりやすい印をつける
+    my $t = scalar @nums - $kosu ; 
+    $kosu = $t==0 ? BRIGHT_RED $kosu : $t==1 ? YELLOW $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
     say join "\t" , @out , @out2 ;
   }
@@ -143,8 +144,7 @@ sub HELP_MESSAGE {
      # 四捨五入して、0.25 と 0.33 になるような分数で同じ分母を持つものを見つける。
      # 出力される各行の最終行が 2 となるものを探せば良い。
 
- オブション: 
-
+ オプション: 
 
   -c : 入力された数は、切り上げられた数であるとみなす。(ceil)
   -f : 入力された数は、切り捨てられた数であると見なす。(floor)
@@ -152,7 +152,7 @@ sub HELP_MESSAGE {
   -v 0 : 通常は、分子の数値を知るべくその半区間を表示するが、 -v 0 でそれをしない。(verbose)
   -v 1 : 半開区間の表示に色を着けない。
 
-  -d NUM : 割り算で分かりやすい数式も出力する。NUMは0などを指定すること。割り算の結果の小数点以下の桁数をどれだけ増やすかの指定。
+  -D num : 割り算の数式も出力。numは小数点以下の桁数。四捨五入で出力される。
   -% : 入力された数はパーセンテージ表記(百分率)であると見なし、内部的には100分の1倍される。
   --help : このヘルプを表示する。(ただしPod::PerldocJp を一度インストールすると perldoc $0 でも可能。)
 
