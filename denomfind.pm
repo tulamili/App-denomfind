@@ -1,6 +1,6 @@
 package App::denomfind ;  
-our $VERSION = '0.250' ; 
-our $DATE = '2022-10-11T23:59:00+09:00' ; 
+our $VERSION = '0.251' ; 
+our $DATE = '2022-10-12T16:22+09:00' ; 
 
 =encoding utf8
 
