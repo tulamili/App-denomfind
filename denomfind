@@ -9,33 +9,36 @@
 #
 
 use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
-use Getopt::Std ; getopts 'cD:fg:v:%' , \my%o ; 
+use Getopt::Std ; getopts 'cD:fg:v:y:%' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
-#sub decDig ( $ ) ; # 小数点以下が何桁であるか。
-#sub numInts ( $$ ) ; # 引数(x,y)が与えられた時に、区間[x,y)または(y,x]の半区間に整数が、何個含まれるか
 
 HELP_MESSAGE () unless @ARGV ; 
 $o{g} //= 20 ; # 分母の最大値
 $o{v} //= '' ; # 出力情報の冗長度。0なら分子数値範囲を見せない。1なら無着色。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
+my @nums = & readNums ; 
+my $count = 0 ; # 出力行数
+my $start = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値
 & main () ; 
 exit 0 ;
 
 sub main ( ) { 
-  my @nums = & readNums ; 
+  
   my ( @nA , @nB ) ; # 区間の 閉じた端A と 開いた端B
   do { my ( $A , $B ) = realInt ( $_ ) ; push @nA, $A ; push @nB, $B } for @nums ; 
 
   do { # 出力の1行目
     my @seq = 1 .. $#nums+1 ;
     my @out = qw[denom fit] ; 
-    push @out , map ( "numerator_$_" , @seq ) unless $o{v} eq "0" ; 
-    push @out , map { CYAN "f$_:".$nums[$_-1] } @seq if exists $o{D} ;
+    for ( @seq ) { 
+      push @out , "numerator_$_" unless $o{v} eq "0" ; 
+      push @out , CYAN "f$_:".$nums[$_-1] if exists $o{D} ;
+    }
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
-
-  for ( my $denom = 1 ; $denom <= $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
+  
+  for ( my $denom = $start ; $count <= $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @out2 = () ; 
@@ -50,32 +53,37 @@ sub main ( ) {
       }
       next unless exists $o{D} ;
       if ( @int == 0 ) { 
-        push @out2 , CYAN '-' if @int == 0 ;
+        push @out , CYAN '-' if @int == 0 ;
       } else { 
-        my $d = $o{D} ; #decDig ( "$nA[$i]" ) + $o{D}   ; # 0 と書いても 1桁増えると言える。 # <- それと、無駄な計算もしている
-        my $A = "$int[0]/$denom=" . (sprintf "%0.${d}f" , $int[0]/$denom ) =~ s/^0+//r ; 
-        my $B = "$int[-1]/$denom=" . (sprintf "%0.${d}f" , $int[0]/$denom ) =~ s/^0+//r ; 
-        push @out2 , CYAN $A if @int == 1 ; 
-        push @out2 , CYAN "$A;$B" if @int == 2 ; 
+        my $A = "$int[0]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; 
+        my $B = "$int[-1]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; 
+        push @out , CYAN $A if @int == 1 ; 
+        push @out , CYAN "$A;$B" if @int == 2 ; 
       } 
     }
+    next unless yfilter ( $kosu ) ; 
     my $t = scalar @nums - $kosu ; 
     $kosu = $t==0 ? BRIGHT_RED $kosu : $t==1 ? YELLOW $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
-    say join "\t" , @out , @out2 ;
+    say join "\t" , @out ; # , @out2 ;
+    $count ++ ;
   }
+}
+
+sub yfilter ( $ ) { 
+  state @y = exists $o{y} ? eval $o{y} : () ;
+  state @F = map { my $t = $_ ; ( grep { $y[$_] == $t } 0 .. $#y ) ? 1 : 0 } 0 .. scalar @nums ; 
+  return ! exists $o{y} || $F[ $_[0] ] ; 
+
 }
 
 # 半区間 [ $x , $y ) when $x<$y または ( $y , $x ] when $y<$x に、何個の整数が含まれるか。
 sub numInts ( $$ ) { 
   my ( $x, $y ) = @_  ;
-  # return $x < $y ? ceil($y) - ceil($x) : floor($x) - floor($y) ; 
-  my $n =  $x < $y ? ceil($y) - ceil($x) : floor($x) - floor($y) ; 
-  #print STDERR RED $n ;
+  my $n =  $x < $y ? ceil($y) - ceil($x) : floor($x) - floor($y) ; #print STDERR RED $n ;
   return () if $n == 0 ;
   my @Z =  $x < $y ? (ceil($x) , ceil($x) + $n - 1 ) : ( floor($x) - $n + 1 , floor($x) ) ;
-  @Z = ( $Z[0] ) if $Z[0] == $Z[1] ; 
-  #print STDERR RED "[@Z]";
+  @Z = ( $Z[0] ) if $Z[0] == $Z[1] ;   #print STDERR RED "[@Z]";
   return @Z ; 
 }
 
@@ -100,12 +108,8 @@ sub readNums ( ) {
   if ( $o{'%'} ) { ## 百分率の場合の処理 
     for ( @nums ) {
       my $d = 2 + decDig $_ ;
-       $_ = "$_" * "0.01" ; 
+      $_ = "$_" * "0.01" ; 
       $_ = sprintf "%0.${d}f" , $_ ;
-      next ; 
-      $_ .= '.00' if ! /\./ ; # 小数点が無い場合
-      $_ .= '0' if /\.\d$/ ; # 小数点以下1桁の場合 (20%を0.2ではなく0.20としたいため。<-- しかし0.2としたい場合は?)
-      $_ .= '0' x $d ; # その上で、元の数の小数点以下桁数と同じだけ0を、後ろに付加する。
     }
   } 
   return @nums ; 
@@ -148,9 +152,10 @@ sub HELP_MESSAGE {
 
   -c : 入力された数は、切り上げられた数であるとみなす。(ceil)
   -f : 入力された数は、切り捨てられた数であると見なす。(floor)
-  -g num : 分母の数をどこまで大きくするか。未指定なら20。"Inf" も指定可能。(get, greatest)
+  -g num : 何個の出力を得るかの指定。未指定なら20。"Inf" も指定可能。(get, greatest)
+  -g start,num : コロンを使うと、分母をどの数から始めるかを指定が可能。
   -v 0 : 通常は、分子の数値を知るべくその半区間を表示するが、 -v 0 でそれをしない。(verbose)
-  -v 1 : 半開区間の表示に色を着けない。
+  -y EVAL : fit値(整数を区間内に持つ対応する分子の個数)がどの場合に出力するかを指定する。EVALは,や..で指定可能。
 
   -D num : 割り算の数式も出力。numは小数点以下の桁数。四捨五入で出力される。
   -% : 入力された数はパーセンテージ表記(百分率)であると見なし、内部的には100分の1倍される。
