@@ -38,7 +38,7 @@ sub main ( ) {
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
   
-  for ( my $denom = $start ; $count <= $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
+  for ( my $denom = $start ; $count < $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @out2 = () ; 
