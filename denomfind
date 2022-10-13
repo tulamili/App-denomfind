@@ -9,15 +9,16 @@
 #
 
 use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
-use Getopt::Std ; getopts 'cD:fg:v:y:%' , \my%o ; 
+use Getopt::Std ; getopts 'cD:fg:IQy:%2:' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
 
 HELP_MESSAGE () unless @ARGV ; 
-$o{g} //= 20 ; # 分母の最大値
-$o{v} //= '' ; # 出力情報の冗長さを表す。0なら分子の数値の範囲を見せない。
+$o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ; 
+say STDERR BOLD FAINT "Given rates are " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
 my $count = 0 ; # 出力行数
 my $start = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値
 & main () ; 
@@ -32,40 +33,53 @@ sub main ( ) {
     my @seq = 1 .. $#nums+1 ;
     my @out = qw[denom fit] ; 
     for ( @seq ) { 
-      push @out , "numerator_$_" unless $o{v} eq "0" ; 
       push @out , CYAN "f$_:".$nums[$_-1] if exists $o{D} ;
+      push @out , "numerator_$_" if $o{I} ; # unless $o{v} eq "0" ; 
     }
+    push @out , "dividends" if $o{Q} ;
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
   
   for ( my $denom = $start ; $count < $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
-    my @out2 = () ; 
+    my @numerators = () ; 
     push @out , "$denom" ; # コロン(:)を以前付与していた
     for my $i ( 0 .. $#nums ) { 
       my ($mA,$mB) = ( "$nA[$i]" * "$denom" , "$nB[$i]" * "$denom" ) ; # 分子の数値に対応
-      my @int = numInts ( $mA , $mB ) ; #? 1 : 0 ; # 区間に整数を含むか否か
+      my @int = numInts ( $mA , $mB ) ; #区間に含まれる整数の最小と最大。返値の要素数は1の場合も0の場合もある。
+      push @numerators , @int ;
       $kosu ++ if @int ;
-      unless ( $o{v} eq "0" ) {
+      if ( exists $o{D} ) {
+        if ( @int == 0 ) { 
+          push @out , CYAN '-' if @int == 0 ;
+        } else { 
+          my $A = "$int[0]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; 
+          my $B = "$int[-1]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; # 無駄発生してる
+          push @out , CYAN $A if @int == 1 ; 
+          push @out , CYAN "$A;$B" if @int == 2 ; 
+        }
+      } # ifend $o{D}
+      if ( $o{I} ) {
         my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
         push @out , @int ? GREEN $str : $str ; 
-      }
-      next unless exists $o{D} ;
-      if ( @int == 0 ) { 
-        push @out , CYAN '-' if @int == 0 ;
-      } else { 
-        my $A = "$int[0]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; 
-        my $B = "$int[-1]/$denom=" . (sprintf "%0.$o{D}f" , $int[0]/$denom ) =~ s/^0+//r ; 
-        push @out , CYAN $A if @int == 1 ; 
-        push @out , CYAN "$A;$B" if @int == 2 ; 
-      } 
+      } # ifend $o{I} 
     }
     next unless yfilter ( $kosu ) ; 
     my $t = scalar @nums - $kosu ; 
     $kosu = $t==0 ? BRIGHT_RED $kosu : $t==1 ? YELLOW $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
-    say join "\t" , @out ; # , @out2 ;
+    if ( $o{Q} ) { 
+      my $str = join ',' , @numerators ; 
+      if ( @numerators >= 2 ) { 
+        my @t = map {$_ - $numerators[0] } @numerators [ 1 .. $#numerators ] ;
+        my $gcd = bgcd @t ; # Math::BigInt::
+        my $rem = $numerators[0] % $gcd ;
+        $str .= ' (' . "${gcd}q" . ($rem?"+$rem":'') . ')' if $gcd > 1 ; 
+      }
+      push @out, $str ;
+    }
+    say join "\t" , @out ; 
     $count ++ ;
   }
 }
@@ -155,10 +169,12 @@ sub HELP_MESSAGE {
   -f : 入力された数は、切り捨てられた数であると見なす。(floor)
   -g num : 何個の出力を得るかの指定。未指定なら20。"Inf" も指定可能。(get, greatest)
   -g start,num : コロンを使うと、分母をどの数から始めるかを指定が可能。
-  -v 0 : 通常は、分子の数値を知るべくその半区間を表示するが、 -v 0 でそれをしない。(verbose)
   -y EVAL : fit値(整数を区間内に持つ対応する分子の個数)がどの場合に出力するかを指定する。EVALは,や..で指定可能。
 
   -D num : 割り算の数式も出力。numは小数点以下の桁数。四捨五入で出力される。
+  -I : 分子の数値を知るべくその半区間を表示す。(Interval)
+  -Q  : 
+  -2 0 : 二次情報の出力を抑制する。
   -% : 入力された数はパーセンテージ表記(百分率)であると見なし、内部的には100分の1倍される。
   --help : このヘルプを表示する。(ただしPod::PerldocJp を一度インストールすると perldoc $0 でも可能。)
 
