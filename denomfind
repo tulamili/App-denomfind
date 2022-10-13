@@ -6,6 +6,7 @@
 #   -- developed by 下野寿之 Toshiyuki Shimono in Tokyo, Japan, 
 #   -- first developed probably on 2016-06-20
 #   -- one debugging on -% and -c on 2022-10-11 
+#   -- heavy implementation added on 2022-10-12, 10-13.  
 #
 
 use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
@@ -13,6 +14,7 @@ use Getopt::Std ; getopts 'cD:fg:IQy:%2:' , \my%o ;
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
+use List::Util qw [ reduce ] ;
 
 HELP_MESSAGE () unless @ARGV ; 
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
@@ -34,7 +36,7 @@ sub main ( ) {
     my @out = qw[denom fit] ; 
     for ( @seq ) { 
       push @out , CYAN "f$_:".$nums[$_-1] if exists $o{D} ;
-      push @out , "numerator_$_" if $o{I} ; # unless $o{v} eq "0" ; 
+      push @out , "nu_$_" if $o{I} ; # unless $o{v} eq "0" ; 
     }
     push @out , "dividends" if $o{Q} ;
     say join "\t" , map { UNDERLINE $_ } @out ;
@@ -43,12 +45,12 @@ sub main ( ) {
   for ( my $denom = $start ; $count < $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
-    my @numerators = () ; 
+    my @nu = () ; # numerators 分子の数の集まり
     push @out , "$denom" ; # コロン(:)を以前付与していた
     for my $i ( 0 .. $#nums ) { 
       my ($mA,$mB) = ( "$nA[$i]" * "$denom" , "$nB[$i]" * "$denom" ) ; # 分子の数値に対応
       my @int = numInts ( $mA , $mB ) ; #区間に含まれる整数の最小と最大。返値の要素数は1の場合も0の場合もある。
-      push @numerators , @int ;
+      push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
       if ( exists $o{D} ) {
         if ( @int == 0 ) { 
@@ -69,12 +71,12 @@ sub main ( ) {
     my $t = scalar @nums - $kosu ; 
     $kosu = $t==0 ? BRIGHT_RED $kosu : $t==1 ? YELLOW $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
-    if ( $o{Q} ) { 
-      my $str = join ',' , @numerators ; 
-      if ( @numerators >= 2 ) { 
-        my @t = map {$_ - $numerators[0] } @numerators [ 1 .. $#numerators ] ;
+    if ( $o{Q} ) {
+      my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @nu ;
+      if ( @nu >= 2 ) { 
+        my @t = map {$_ - $nu[0] } @nu [ 1 .. $#nu ] ;
         my $gcd = bgcd @t ; # Math::BigInt::
-        my $rem = $numerators[0] % $gcd ;
+        my $rem = $nu[0] % $gcd ;
         $str .= ' (' . "${gcd}q" . ($rem?"+$rem":'') . ')' if $gcd > 1 ; 
       }
       push @out, $str ;
@@ -84,6 +86,10 @@ sub main ( ) {
   }
 }
 
+sub npack ( @ )  { 
+  #return reduce { $a =~ /(\d+)$/ ; if($b-$1==1){$a=~s/\d+$/$b/r}else{"$a:$b"} } @_ ;
+  return reduce { $a =~ /(\d+)$/ ; if($b-$1==1){"$a~$b"}else{"$a:$b"} } @_ ;
+}
 sub yfilter ( $ ) { 
   state @y = exists $o{y} ? eval $o{y} : () ;
   state @F = map { my $t = $_ ; ( grep { $y[$_] == $t } 0 .. $#y ) ? 1 : 0 } 0 .. scalar @nums ; 
