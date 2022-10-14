@@ -49,7 +49,7 @@ sub main ( ) {
     #do{ $count++ ; next } 
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
-    my @nu = () ; # numerators 分子の数の集まり
+    my @nu = () ; # numerators 分子の数の集まり ## 
     push @out , "$denom" ; # コロン(:)を以前付与していた
     for my $i ( 0 .. $#nums ) { 
       my ($mA,$mB) = ( "$nA[$i]" * "$denom" , "$nB[$i]" * "$denom" ) ; # 分子の数値に対応
@@ -66,17 +66,16 @@ sub main ( ) {
     if ( $o{Q} ) {
       my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @nu ;
       if ( @nu >= 2 ) { 
-        my @t = map {$_ - $nu[0] } @nu [ 1 .. $#nu ] ;
-        my $gcd = bgcd @t ; # Math::BigInt::
+        my $gcd = bgcd map {$_ - $nu[0] } @nu [ 1 .. $#nu ] ; 
         my $rem = $nu[0] % $gcd ;
-        $str .= ' (' . "${gcd}q" . ($rem?"+$rem":'') . ')' if $gcd > 1 ; 
+        $str .= ' (' . "${gcd}q" . ( $rem ? "+$rem" : '') . ')' if $gcd > 1 ; 
       }
       push @out, $str ;
     }
     say join "\t" , map { $_ // '' } @out ; 
     $count ++ ; 
   } continue { 
-    $denom += $o{g} < 0 ? -1 : 1 ; #(substr$o{g},0,1) eq '-' ? -1 : 1 ;
+    $denom += $o{g} < 0 ? -1 : 1 ; 
   }
 }
 
