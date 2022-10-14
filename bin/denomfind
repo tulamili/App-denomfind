@@ -15,15 +15,17 @@ use POSIX qw[ ceil floor ] ;
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
 use List::Util qw [ reduce ] ;
+use FindBin qw[ $Script ] ; 
 
 HELP_MESSAGE () unless @ARGV ; 
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ; 
-say STDERR BOLD FAINT "Given rates are " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
-my $count = 0 ; # 出力行数
+my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
+print STDERR BOLD FAINT "Given rates were " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
+say STDERR BOLD FAINT " $count denominators have printed. ($Script)" ; 
 exit 0 ;
 
 sub main ( ) { 
@@ -36,14 +38,15 @@ sub main ( ) {
     my @out = qw[denom fit] ; 
     for ( @seq ) { 
       push @out , CYAN "f$_:".$nums[$_-1] if exists $o{D} ;
-      push @out , "nu_$_" if $o{I} ; # unless $o{v} eq "0" ; 
+      push @out , "numerators_$_" if $o{I} ; # unless $o{v} eq "0" ; 
     }
     push @out , "dividends" if $o{Q} ;
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
   
-  while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。なお、'±Inf'は使えなくなった模様。
-    next if $denom <= 0 ;
+  while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。
+    $o{g} < 0 ? last : next if $denom <= 0 ; # 分母$denomが負の場合はまだ上手く動作。0の場合は区間として[0,0]にならずまずい。
+    #do{ $count++ ; next } 
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @nu = () ; # numerators 分子の数の集まり
@@ -70,7 +73,7 @@ sub main ( ) {
     }
     next unless yfilter ( $kosu ) ; 
     my $t = scalar @nums - $kosu ; 
-    $kosu = $t==0 ? BRIGHT_RED $kosu : $t==1 ? YELLOW $kosu : $t==2 ? $kosu : FAINT $kosu ; 
+    $kosu = $t==0 ? BRIGHT_RED BOLD $kosu : $t==1 ? YELLOW BOLD $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
     if ( $o{Q} ) {
       my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @nu ;
@@ -83,9 +86,9 @@ sub main ( ) {
       push @out, $str ;
     }
     say join "\t" , map { $_ // '' } @out ; 
-  } continue { 
     $count ++ ; 
-    $denom += (substr$o{g},0,1) eq '-' ? -1 : 1 ;
+  } continue { 
+    $denom += $o{g} < 0 ? -1 : 1 ; #(substr$o{g},0,1) eq '-' ? -1 : 1 ;
   }
 }
 
