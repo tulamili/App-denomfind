@@ -22,7 +22,7 @@ do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ; 
 say STDERR BOLD FAINT "Given rates are " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
 my $count = 0 ; # 出力行数
-my $start = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値
+my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
 exit 0 ;
 
@@ -42,7 +42,9 @@ sub main ( ) {
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
   
-  for ( my $denom = $start ; $count < $o{g} ; $denom ++ ) { # 無限大("Inf")を指定された場合も想定
+  #for ( my $denom = $start ; $count < abs $o{g} ; 1 ) { # 無限大("Inf")を指定された場合も想定
+  while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。
+    next if $denom <= 0 ;
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @nu = () ; # numerators 分子の数の集まり
@@ -82,8 +84,11 @@ sub main ( ) {
       push @out, $str ;
     }
     say join "\t" , map { $_ // '' } @out ; 
-    $count ++ ;
+  } continue { 
+    $count ++ ; 
+    $denom += (substr$o{g},0,1) eq '-' ? -1 : 1 ;
   }
+
 }
 
 sub npack ( @ )  { 
@@ -178,6 +183,7 @@ sub HELP_MESSAGE {
   -f : 入力された数は、切り捨てられた数であると見なす。(floor)
   -g num : 何個の出力を得るかの指定。未指定なら20。"Inf" も指定可能。(get, greatest)
   -g start,num : コロンを使うと、分母をどの数から始めるかを指定が可能。
+  -g start,-num : numにマイナスの符号を付加すると、start から 1ずつ減少させながら 最大 num個探索する。
   -y EVAL : fit値(整数を区間内に持つ対応する分子の個数)がどの場合に出力するかを指定する。EVALは,や..で指定可能。
 
   -D num : 割り算の数式も出力。numは小数点以下の桁数。四捨五入で出力される。
