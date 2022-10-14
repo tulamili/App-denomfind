@@ -46,7 +46,6 @@ sub main ( ) {
   
   while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。
     $o{g} < 0 ? last : next if $denom <= 0 ; # 分母$denomが負の場合はまだ上手く動作。0の場合は区間として[0,0]にならずまずい。
-    #do{ $count++ ; next } 
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @nu = () ; # numerators 分子の数の集まり ## 
@@ -66,7 +65,7 @@ sub main ( ) {
     if ( $o{Q} ) {
       my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @nu ;
       if ( @nu >= 2 ) { 
-        my $gcd = bgcd map {$_ - $nu[0] } @nu [ 1 .. $#nu ] ; 
+        my $gcd = bgcd map { $_ - $nu[0] } @nu [ 1 .. $#nu ] ; 
         my $rem = $nu[0] % $gcd ;
         $str .= ' (' . "${gcd}q" . ( $rem ? "+$rem" : '') . ')' if $gcd > 1 ; 
       }
