@@ -57,17 +57,12 @@ sub main ( ) {
       push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
       if ( exists $o{D} ) {
-        if ( @int == 0 ) { 
-          push @out , CYAN '-' if @int == 0 ;
-        } else { 
-          my @f = map { dform ( $_ ) } @int ; 
-          push @out , CYAN join '~', @f ; 
-        }
-      } # ifend $o{D}
+        push @out , CYAN ( @int ? join '~', map { dform ( $_ ) } @int : '-' ) ;
+      } 
       if ( $o{I} ) {
         my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
         push @out , @int ? GREEN $str : $str ; 
-      } # ifend $o{I} 
+      } 
     }
     next unless yfilter ( $kosu ) ; 
     my $t = scalar @nums - $kosu ; 
