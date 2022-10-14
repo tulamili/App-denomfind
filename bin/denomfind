@@ -60,9 +60,8 @@ sub main ( ) {
         if ( @int == 0 ) { 
           push @out , CYAN '-' if @int == 0 ;
         } else { 
-          my ($fA,$fB) = map{ dform ( $_ ) } @int ; #0 .. $#int ; # 0 , -1 ; 
-          push @out , CYAN $fA if @int == 1 ; 
-          push @out , CYAN "$fA~$fB" if @int == 2 ; # コロンから 空白に囲まれた ~ に変更。
+          my @f = map { dform ( $_ ) } @int ; 
+          push @out , CYAN join '~', @f ; 
         }
       } # ifend $o{D}
       if ( $o{I} ) {
