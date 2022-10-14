@@ -60,8 +60,7 @@ sub main ( ) {
         push @out , CYAN ( @int ? join '~', map { dform ( $_ ) } @int : '-' ) ;
       } 
       if ( $o{I} ) {
-        my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; 
-        push @out , @int ? GREEN $str : $str ; 
+        push @out , do { my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; @int ? GREEN $str : $str } ; 
       } 
     }
     next unless yfilter ( $kosu ) ; 
