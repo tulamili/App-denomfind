@@ -20,7 +20,7 @@ use FindBin qw[ $Script ] ;
 HELP_MESSAGE () unless @ARGV ; 
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
-my @nums = & readNums ; 
+my $q = my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
 my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
