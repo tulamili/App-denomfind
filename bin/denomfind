@@ -56,12 +56,8 @@ sub main ( ) {
       my @int = numInts ( $mA , $mB ) ; #区間に含まれる整数の最小と最大。返値の要素数は1の場合も0の場合もある。
       push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
-      if ( exists $o{D} ) {
-        push @out , CYAN ( @int ? join '~', map { dform ( $_ ) } @int : '-' ) ;
-      } 
-      if ( $o{I} ) {
-        push @out , do { my $str = $mA < $mB ? "[$mA $mB)" : "($mB $mA]" ; @int ? GREEN $str : $str } ; 
-      } 
+      push @out , CYAN ( @int ? join '~', map { dform ( $_ ) } @int : '-' ) if exists $o{D} ; 
+      push @out , do{my $str=$mA<$mB?"[$mA $mB)":"($mB $mA]" ; @int?GREEN $str : $str } if $o{I} ; 
     }
     next unless yfilter ( $kosu ) ; 
     my $t = scalar @nums - $kosu ; 
@@ -85,7 +81,7 @@ sub main ( ) {
 }
 
 sub dform ( $ ) { 
-  return "$_[0]/$denom" . (sprintf "%0.$o{D}f" , $_[0]/$denom ) =~ s/^0+//r if $o{D} > 0 ; 
+  return "$_[0]/$denom=" . (sprintf "%0.$o{D}f" , $_[0]/$denom ) =~ s/^0+//r if $o{D} > 0 ; 
   return "$_[0]/$denom" ;
 }
 
