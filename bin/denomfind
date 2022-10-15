@@ -79,11 +79,9 @@ sub procQ () {
     my $rem = $_[0] % $gcd ;
     $str .= ' (' . "${gcd}q" . ( $rem ? "+$rem" : '') . ')' if $gcd > 1 ; 
   } elsif ( @_ == 1 ) {
-    #my @tmp = factor_exp ( $_[0] ) ;
-    #my $t = 
-    $str .= ' = '.join' x ',map{$_->[1]>1?"$_->[0]^$_->[1]":$_->[0] } factor_exp ( $_[0] ) if $mpu ;
+    $str .= ' = '.join' x ', map {$_->[1]>1?"$_->[0]^$_->[1]":$_->[0] } factor_exp ( $_[0] ) if $mpu ;
   }
-  return $str ; #push @out, $str ;
+  return $str ;
 }
 
 sub dform ( $ ) { 
