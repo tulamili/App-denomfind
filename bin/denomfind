@@ -57,7 +57,7 @@ sub main ( ) {
       my @int = numInts ( $mA , $mB ) ; #区間に含まれる整数の最小と最大。返値の要素数は1の場合も0の場合もある。
       push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
-      push @out , CYAN ( @int ? join '~', map { dform ( $_ ) } @int : '-' ) if exists $o{D} ; 
+      push @out , CYAN ( @int ? join '~', map { dform ( $_ , $nums[$i] ) } @int : '-' ) if exists $o{D} ; 
       push @out , do{my $str=$mA<$mB?"[$mA $mB)":"($mB $mA]" ; @int?GREEN $str : $str } if $o{I} ; 
     }
     next unless yfilter ( $kosu ) ; 
@@ -85,9 +85,11 @@ sub procQ () {
   return $str ;
 }
 
-sub dform ( $ ) { 
+sub dform ( $$ ) { 
   return "$_[0]/$denom=" . (sprintf "%0.$o{D}f" , $_[0]/$denom ) =~ s/^0+//r if $o{D} > 0 ; 
-  return "$_[0]/$denom" ;
+  return "$_[0]/$denom" if $o{D} == 0 ; 
+  my $d = -$o{D} ; 
+  "$_[0]/$denom" . sprintf "%+0.${d}f" , $_[1] - $_[0]/$denom  ;
 }
 
 sub npack ( @ )  { 
@@ -204,6 +206,7 @@ sub HELP_MESSAGE {
   -y , : fit値が最大の場合(引数として与えた割合の近似値の個数)のみ出力。( -y のパラメタは書式はやや複雑。)
 
   -D num : 除算の式を出力。numは小数点以下の桁数。四捨五入で除算結果を出力。num=0の場合は、除算結果は見せず式のみ。
+  -D -num : 除算の式と共に、ずれが分かるように、小数点以下num桁の誤差とともに示す。
   -I : 分子の数値を知るべくその半区間を表示す。(Interval)
   -Q : 分子の候補となる値を全て出す。簡便な表示となる。さらに 2q+1とか5q+3 などと出力(奇数とか1のくらいが3または8などが分かる。)
   -2 0 : 二次情報の出力を抑制する。
