@@ -16,6 +16,8 @@ use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
 use List::Util qw [ reduce ] ;
 use FindBin qw[ $Script ] ; 
+my $mpu ; # Math::Prime::Util のモジュールがインストールされているか点検。
+CHECK {$mpu = eval 'use Math::Prime::Util ; 1 ' || 0 } # 他にBEGIN INIT UNITCHECK が使える。
 
 HELP_MESSAGE () unless @ARGV ; 
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
@@ -62,20 +64,22 @@ sub main ( ) {
     my $t = scalar @nums - $kosu ; 
     $kosu = $t==0 ? BRIGHT_RED BOLD $kosu : $t==1 ? YELLOW BOLD $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
-    if ( $o{Q} ) {
-      my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @nu ;
-      if ( @nu >= 2 ) { 
-        my $gcd = bgcd map { $_ - $nu[0] } @nu [ 1 .. $#nu ] ; 
-        my $rem = $nu[0] % $gcd ;
-        $str .= ' (' . "${gcd}q" . ( $rem ? "+$rem" : '') . ')' if $gcd > 1 ; 
-      }
-      push @out, $str ;
-    }
+    push @out , procQ( @nu ) if $o{Q} ; # ( $o{Q} ) {    }
     say join "\t" , map { $_ // '' } @out ; 
     $count ++ ; 
   } continue { 
     $denom += $o{g} < 0 ? -1 : 1 ; 
   }
+}
+
+sub procQ () { 
+  my $str = reduce{$a=~/(\d+)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @_ ;
+  if ( @_ >= 2 ) { 
+    my $gcd = bgcd map { $_ - $_[0] } @_ [ 1 .. $#_ ] ; 
+    my $rem = $_[0] % $gcd ;
+    $str .= ' (' . "${gcd}q" . ( $rem ? "+$rem" : '') . ')' if $gcd > 1 ; 
+  }
+  return $str ; #push @out, $str ;
 }
 
 sub dform ( $ ) { 
@@ -86,6 +90,7 @@ sub dform ( $ ) {
 sub npack ( @ )  { 
   return reduce {  $a =~ /(\d+)$/ ; if( $b-$1==1 ){ "$a~$b" }else{ "$a:$b" } }  @_ ;
 }
+
 sub yfilter ( $ ) { 
   state @y = exists $o{y} ? eval $o{y} : () ;
   state @F = map { my $t = $_ ; ( grep { $y[$_] == $t } 0 .. $#y ) ? 1 : 0 } 0 .. scalar @nums ; 
