@@ -60,8 +60,8 @@ sub main ( ) {
   while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。
     $o{g} < 0 ? last : next if $denom <= 0 ; # 分母$denomが負の場合はまだ上手く動作。0の場合は区間として[0,0]にならずまずい。
     if ( $o{g} > 0 && $denom > 0 ) { # ある時から何も出力しないのに、無限ループとなる事態の回避
-      last if exists $o{a} && $ymx < $q && $denom > $roa ;
-      last if $ymx < grep { length ($denom) - 1 >= $_ } @ddg  ; 
+      last if exists $o{a} && $ymx < $q && $denom -1 > $roa ;
+      last if $ymx < grep { length ($denom -1 ) - 1 >= $_ } @ddg  ; 
     }
 
     my $kosu = 0 ; # 該当個数(こすう) 
