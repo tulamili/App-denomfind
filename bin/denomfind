@@ -14,20 +14,30 @@ use Getopt::Std ; getopts 'a:cD:fg:IQy:%2:5:' , \my%o ;
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
-use List::Util qw [ reduce ] ;
+use List::Util qw [ reduce min max ] ;
 use FindBin qw[ $Script ] ; 
 my $mpu ; # Math::Prime::Util のモジュールがインストールされているか点検。
 CHECK {$mpu = eval 'use Math::Prime::Util qw[ factor factor_exp ]; 1 ' || 0 } # 他にBEGIN INIT UNITCHECK が使える。
 
 HELP_MESSAGE () unless @ARGV ; 
+#say BRIGHT_BLUE BOLD join " " , & yparse ( $o{y} ) ; exit ;
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
-my $q = my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
+my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
+my $q = @nums ;
+
+# ここは、同じ引数で同じ関数を2回(以上)呼び出すという意味で、不効率で冗長とも言える。後で整理。.. 
+my @ddg = map { & decDig ($_ ) } @nums ; # 与えられた割合近似値が、それぞれ、小数点以下何桁であるか? dig digit 
+my $ymx = max ( & yparse ( $o{y} ) ) ; # y max
+my $roa = abs 1/$o{a} if exists $o{a} ; # reciprocal $o{a}
+
 my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
-print STDERR BOLD FAINT "Given rates were " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
-say STDERR BOLD FAINT " $count denominators have printed on each line. ($Script)" ; 
+END{
+  print STDERR BOLD FAINT "Given rates were " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
+  say STDERR BOLD FAINT " $count denominators have printed on each line. Searched until $denom in denominator. ($Script)" ; 
+}
 exit 0 ;
 
 sub main ( ) { 
@@ -46,8 +56,14 @@ sub main ( ) {
     say join "\t" , map { UNDERLINE $_ } @out ;
   } ;
   
+  $SIG{INT} = sub { say STDERR FAINT BOLD "\$denom=$denom" ; exit } ;
   while ( $count < abs $o{g} ) {  # continue ブロックを用いていることに注意。
     $o{g} < 0 ? last : next if $denom <= 0 ; # 分母$denomが負の場合はまだ上手く動作。0の場合は区間として[0,0]にならずまずい。
+    if ( $o{g} > 0 && $denom > 0 ) { # ある時から何も出力しないのに、無限ループとなる事態の回避
+      last if exists $o{a} && $ymx < $q && $denom > $roa ;
+      last if $ymx < grep { length ($denom) - 1 >= $_ } @ddg  ; 
+    }
+
     my $kosu = 0 ; # 該当個数(こすう) 
     my @out = () ; # 出力文字列
     my @nu = () ; # numerators 分子の数の集まり ## 
