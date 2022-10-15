@@ -25,7 +25,7 @@ my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
 print STDERR BOLD FAINT "Given rates were " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
-say STDERR BOLD FAINT " $count denominators have printed. ($Script)" ; 
+say STDERR BOLD FAINT " $count denominators have printed on each line. ($Script)" ; 
 exit 0 ;
 
 sub main ( ) { 

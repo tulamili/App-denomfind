@@ -1,16 +1,27 @@
 #!/usr/bin/perl
-use 5.001 ; use strict ; use warnings ; 
-use Getopt::Std ; getopts '=' , \my %o ;
+use 5.010 ; use strict ; use warnings ; 
+use Getopt::Std ; getopts '=2:' , \my %o ;
+use FindBin qw [ $Script ] ;
+use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 
-my @p ; 
+my @p ; # 比較対象となる既に読み取った数。(この数の倍数が読み取られない。)
+my $c0 = 0 ; # 読み取った数。ヘッダと見なした行はカウントしない。
+my $c1 = 0 ; # 出力したデータ。ヘッダと見なした行はカウントしない。
+
+END {
+  say STDERR FAINT BOLD "$c1 of $c0 stored pieces of numbers have output. ($Script)" if ! 2 eq ($o{2}//'') ;
+}
+
 while ( <> ) { 
    do { print $_ ; next } if $. == 1 && $o{'='} ; 
 	chomp ; 
 	/(\d+)/ ; # 小数点以下および符号を無視できる。ただし、1.2e3 のような表記には対応していない。
 	my $n = $1 // $_ ; #( $_ + 0 ) ; 
+   $c0 ++ ;
 	unless  ( do { my $t = $n ;  grep { $t % $_ == 0 } @p } ) {
 		print "$_\n" ;
 		push @p, $n ;
+      $c1 ++ ;
 	}
 }
 
@@ -48,13 +59,14 @@ sub HELP_MESSAGE {
 オプションに関して :
 
    -=  : 入力の1行目は、何も処理せずに、そのまま出力する。
+   -20 : 何行読んで何行出力したかの、二次情報の出力を抑制する。
    --help : このヘルプを表示する。(ただしPod::PerldocJp を一度インストールすると perldoc $0 でも可能。)
 
 関連するコマンド : 
 
    denomfind  
      # 四捨五入された割合の数がいくつかある場合に、分母を推定するプログラム。下記の様に使う。
-     # denomfind -vm600 -\% 7.1  22.5 70.4  8.9 25.7 65.4| grep "*" | primefind
+     # denomfind -vm600 -\% 7.1  22.5 70.4  8.9 25.7 65.4 | grep "*" | primefind
 
 その他メモ : 
 
