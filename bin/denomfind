@@ -27,7 +27,7 @@ my $q = @nums ;
 
 # ここは、同じ引数で同じ関数を2回(以上)呼び出すという意味で、不効率で冗長とも言える。後で整理。.. 
 my @ddg = map { & decDig ($_ ) } @nums ; # 与えられた割合近似値が、それぞれ、小数点以下何桁であるか? dig digit 
-my $ymx = max ( exists $o{y} ? & yparse ( $o{y} ) : @nums ) ; # y max # 計算が冗長.. 何度も気になる。ƒexp
+my $ymx = max ( exists $o{y} ? & yparse ( $o{y} ) : $q ) ; # y max # 計算が冗長.. 何度も気になる。ƒexp
 my $roa = abs 1/$o{a} if exists $o{a} ; # reciprocal $o{a}
 
 my $count = 0 ; # 探索した分母の個数
