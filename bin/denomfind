@@ -88,7 +88,7 @@ sub main ( ) {
     $kosu = $t==0 ? BRIGHT_RED BOLD $kosu : $t==1 ? YELLOW BOLD $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
     push @out , procQ( @nu ) if $o{Q} ; # ( $o{Q} ) {    }
-    ( $o{M} // '' ) eq 0? next : ($out[0] .= '.') if bgcd ($denom, @nu) > 1 ; # 分母にピリオドを付加。
+    ( $o{M} // '' ) eq 0? next : ($out[0] .= '.') if @nu && bgcd ($denom, @nu) > 1 ; # 分母にピリオドを付加。
     say join "\t" , map { $_ // '' } @out ; 
     $count ++ ; 
   } continue { 
