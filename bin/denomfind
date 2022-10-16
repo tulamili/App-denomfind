@@ -10,7 +10,7 @@
 #
 
 use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
-use Getopt::Std ; getopts 'a:cD:fg:IQy:%2:5:' , \my%o ; 
+use Getopt::Std ; getopts 'a:cD:fg:IM:Qy:%2:5:' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
@@ -81,7 +81,7 @@ sub main ( ) {
     $kosu = $t==0 ? BRIGHT_RED BOLD $kosu : $t==1 ? YELLOW BOLD $kosu : $t==2 ? $kosu : FAINT $kosu ; 
     splice @out , 1 , 0 , $kosu ; # 出力配列文字列に、個数表記を挿入。
     push @out , procQ( @nu ) if $o{Q} ; # ( $o{Q} ) {    }
-    $out[0] .= '.' if bgcd ($denom, @nu) > 1 ; # 分数が同じ数で割ることで約分できる場合は、分母にピリオドを付加。
+    ( $o{M} // '' ) eq 0? next : ($out[0] .= '.') if bgcd ($denom, @nu) > 1 ; # 分母にピリオドを付加。
     say join "\t" , map { $_ // '' } @out ; 
     $count ++ ; 
   } continue { 
@@ -231,6 +231,7 @@ sub HELP_MESSAGE {
   -I : 分子の数値を知るべくその半区間を表示す。(Interval)
   -Q : 分子の候補となる値を全て出す。簡便な表示となる。さらに 2q+1とか5q+3 などと出力(奇数とか1のくらいが3または8などが分かる。)
   -2 0 : 二次情報の出力を抑制する。
+  -M 0 : ある分母に対して、全ての候補の分子が分母と同じ整数で割れる場合(≒約分可能)は、出力を抑制。
   --help : このヘルプを表示する。(ただしPod::PerldocJp を一度インストールすると perldoc $0 でも可能。)
 
   補足 : 
