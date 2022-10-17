@@ -34,8 +34,10 @@ my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
 END{
-  print STDERR BOLD FAINT "Given rates were " . scalar @nums . " pieces." if @nums > 1 && 0 ne ($o{2}//'') ;
-  say STDERR BOLD FAINT " $count denominators have printed on each line. Searched until $denom in denominator. ($Script)" ; 
+  print STDERR BOLD FAINT @nums . " ratios are given." if @nums > 1 && 0 ne ($o{2}//'') ;
+  my $ud = [ 'down to','from','up to' ] -> [ ( $o{g} <=> 0 ) + 1 ] ; # 'from' はかなり無理矢理である。正常な使用の想定外。
+  $denom += $o{g} > 0 ? -1 : $o{g} < 0 ? 1 : 0 ; # 1個戻す。
+  say STDERR BOLD FAINT " $count denominators have found $ud $denom. ($Script)" ; 
 }
 exit 0 ;
 
