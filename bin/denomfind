@@ -9,7 +9,7 @@
 #   -- heavy implementation added on 2022-10-12, 10-13.  
 #
 
-use 5.014 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
+use 5.024 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
 use Getopt::Std ; getopts 'a:cD:fg:IM:Qy:%2:5:' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
@@ -73,12 +73,10 @@ sub main ( ) {
       push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
       push @out , CYAN ( @int ? join '~', map { dform ( $_ , $nums[$i] ) } @int : '-' ) if exists $o{D} ; 
-      #push @out , do{my $str=$mA<$mB?"[$mA $mB)":"($mB $mA]" ; @int?GREEN $str : $str } if $o{I} ; 
       push @out , do{ my $str=&sect($mA,$mB,$mC) ; @int ? GREEN $str : $str } if $o{I} ; 
     }
     sub sect($$$){
-      #print STDERR RED $_[2] ;
-      return $_[0] < $_[1] ? "[$_[0] $_[1])" : "($_[1] $_[0]]" if $_[2] & 1 ;# ビット演算&
+      return $_[0] < $_[1] ? "[$_[0] $_[1])" : "($_[1] $_[0]]" if $_[2] == 1 ;
       return $_[2] ?  "[$_[0] $_[1]]" : "($_[0] $_[1])" ; #unless $_[2] & 2 ; 
       
     } ; 
@@ -152,12 +150,16 @@ sub yfilter ( $ ) {
 }
 
 # 半区間 [ $x , $y ) when $x<$y または ( $y , $x ] when $y<$x に、何個の整数が含まれるか。
-sub numInts ( $$ ) { 
-  my ( $x, $y ) = @_  ;
-  my $n =  $x < $y ? ceil($y) - ceil($x) : floor($x) - floor($y) ; #print STDERR RED $n ;
+sub numInts ( $$$ ) { # $A,$B,$Cの方が自然な気もする。とりあえず$w はweightのつもり。「端点の閉の個数」
+  my ( $x, $y , $w ) = @_  ; 
+  #print YELLOW "$x->" .floor($x) . ":" . ceil($x). "| $y->". floor($y) . ":" . ceil($y) . " \$w=$w" ;
+  #print YELLOW "(x,y)=($x,$y)\tw=$w\t" ;
+  my $n=  $w==1? $x<$y?ceil($y)-ceil($x):floor($x)-floor($y):$w==2?floor($y)-ceil($x)+1 :ceil($y)-floor($x)-1;
+  #print BRIGHT_RED "\$n=$n" ;
   return () if $n == 0 ;
-  my @Z =  $x < $y ? (ceil($x) , ceil($x) + $n - 1 ) : ( floor($x) - $n + 1 , floor($x) ) ;
+  my @Z= $w==1?$x<$y?(ceil($x),ceil($y)-1):(floor($y)+1,floor($x)):$w==2?(ceil($x),floor($y)) : (floor($x)+1,ceil($y-1) );
   @Z = ( $Z[0] ) if $Z[0] == $Z[1] ;   #print STDERR RED "[@Z]";
+  #print BRIGHT_BLUE "[@Z]" ;
   return @Z ; 
 }
 
