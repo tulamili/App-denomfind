@@ -152,15 +152,11 @@ sub yfilter ( $ ) {
 # 半区間 [ $x , $y ) when $x<$y または ( $y , $x ] when $y<$x に、何個の整数が含まれるか。
 sub numInts ( $$$ ) { # $A,$B,$Cの方が自然な気もする。とりあえず$w はweightのつもり。「端点の閉の個数」
   my ( $x, $y , $w ) = @_  ; 
-  #print YELLOW "$x->" .floor($x) . ":" . ceil($x). "| $y->". floor($y) . ":" . ceil($y) . " \$w=$w" ;
-  #print YELLOW "(x,y)=($x,$y)\tw=$w\t" ;
   my $n=  $w==1? $x<$y?ceil($y)-ceil($x):floor($x)-floor($y):$w==2?floor($y)-ceil($x)+1 :ceil($y)-floor($x)-1;
-  #print BRIGHT_RED "\$n=$n" ;
-  return () if $n == 0 ;
+  #return () if $n == 0 ;
   my @Z= $w==1?$x<$y?(ceil($x),ceil($y)-1):(floor($y)+1,floor($x)):$w==2?(ceil($x),floor($y)) : (floor($x)+1,ceil($y-1) );
-  @Z = ( $Z[0] ) if $Z[0] == $Z[1] ;   #print STDERR RED "[@Z]";
-  #print BRIGHT_BLUE "[@Z]" ;
-  return @Z ; 
+  #@Z = ( $Z[0] ) if $Z[0] == $Z[1] ; 
+  return $Z[0]>$Z[1]? () : $Z[0]<$Z[1] ? @Z : $Z[0] ; 
 }
 
 sub decDig ( $ ) { # 「小数点以下に数が何桁あるか」を小数点の位置から算出して返す
