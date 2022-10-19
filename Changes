@@ -13,3 +13,4 @@ Revision history for the module "App::denomfind"
 0.258  2022-10-17 -5eと-5oを実装して、偶数丸めと奇数丸めに対応。
 
 0.301  2022-10-20 テストパターン(デモ)を導入。
+0.302  2022-10-21 denomfind -Dにおいて、%%やppmの指定を可能とした。
