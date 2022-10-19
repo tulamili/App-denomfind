@@ -10,7 +10,7 @@
 #
 
 use 5.024 ; use strict ; use warnings ;  # s/のr修飾子は v5.14を要求
-use Getopt::Std ; getopts 'a:cD:fg:IM:Qy:%2:5:' , \my%o ; 
+use Getopt::Std ; getopts 'a:cD:fg:IM:QT:y:%2:5:' , \my%o ; 
 use POSIX qw[ ceil floor ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Math::BigInt qw[ bgcd ] ; # -Qの指定時に必要となる。
@@ -18,8 +18,29 @@ use List::Util qw [ reduce min max ] ;
 use FindBin qw[ $Script ] ; 
 my $mpu ; # Math::Prime::Util のモジュールがインストールされているか点検。
 CHECK {$mpu = eval 'use Math::Prime::Util qw[ factor factor_exp ]; 1 ' || 0 } # 他にBEGIN INIT UNITCHECK が使える。
+#say 123 ;exit;
+& test if exists $o{T} ; 
+HELP_MESSAGE () unless @ARGV ;
 
-HELP_MESSAGE () unless @ARGV ; 
+
+sub test () { 
+  if ( $o{T} eq 1 ) { 
+    say STDERR YELLOW ITALIC BOLD "> " , my $cmd = "$0 -D0 -M0 -y-2.. -52 -Q -% 4.76 3.94 3.50 26.37 3.58 2.72" ;
+    system $cmd ; 
+  }
+  if ( $o{T} eq 2 ) { 
+    say STDERR YELLOW ITALIC BOLD "> " , my $cmd = "$0 -g8 -D-6%% -a5e-5 -y, 3.14159265358979323" ;
+    system $cmd ;   
+  }
+  if ( $o{T} eq 3 ) { 
+    say STDERR YELLOW ITALIC BOLD "> " , my $cmd = "$0 -y0,3,4,5 -g290,20 -I -% 2.0 50.7 13.5 21.6 6.8" ;
+    system $cmd ;   
+  }
+
+  
+  exit ;
+}
+
 $o{g} //= 20 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
@@ -34,6 +55,7 @@ my $count = 0 ; # 探索した分母の個数
 my $denom = do { $o{g} =~ s/(.+),// ; $1 } // 1 ; #　開始する分母の値  $o{g} を書き換える場合に注意。
 & main () ; 
 END{
+  exit unless $count ; # 1個も分母を探索していないなら、すぐ終了。
   print STDERR BOLD FAINT @nums . " ratios are given." if @nums > 1 && 0 ne ($o{2}//'') ;
   my $ud = [ 'down to','from','up to' ] -> [ ( $o{g} <=> 0 ) + 1 ] ; # 'from' はかなり無理矢理である。正常な使用の想定外。
   $denom += $o{g} > 0 ? -1 : $o{g} < 0 ? 1 : 0 ; # 1個戻す。
