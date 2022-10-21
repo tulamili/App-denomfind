@@ -78,7 +78,7 @@ sub main ( ) {
     my @seq = 1 .. $#nums+1 ;
     my @out = qw[denom fit] ; 
     for ( @seq ) { 
-      push @out , CYAN "f$_:".$nums[$_-1] if exists $o{D} ;
+      push @out , CYAN $nums[$_-1] if exists $o{D} ; # "f$_:".$nums[$_-1]
       push @out , "numerators_$_" if $o{I} ; # unless $o{v} eq "0" ; 
     }
     push @out , "dividends" if $o{Q} ;
