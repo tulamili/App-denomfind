@@ -51,6 +51,7 @@ sub test () {
 
 $o{g} //= 12 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
 $o{y} //= '1..' ; # 何か候補があれば表示とした。
+$o{D} //= 0 unless grep { m/[DIQ]/ } keys %o ; 
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
 my $q = @nums ;
