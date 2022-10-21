@@ -54,11 +54,12 @@ sub test () {
 
 ### テスト以外はここから開始
 
-$o{D} //= 0 unless grep { m/[DIQ]/ } keys %o ; 
+
 $o{D} =~ s/,(.*)$// if exists $o{D};
 my $Demp = $1 // '-' ; 
+$o{D} //= 0 unless grep { m/[DIQ]/ } keys %o ; 
 $o{g} //= 12 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
-$o{a} =~ s/(^.*)%$/"$1"*"0.01"/er if exists $o{a} && $o{a} =~ /%$/ ;  # -a の指定が % で終わる場合の処理
+$o{a} =~ s/(^.*)%$/"$1"*"0.01"/e if exists $o{a} && $o{a} =~ /%$/ ;  # -a の指定が % で終わる場合の処理
 $o{y} //= '1..' ; # 何か候補があれば表示とした。
 
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
