@@ -45,7 +45,7 @@ sub test () {
     #  ↓ https://trend-research.jp/3038/ の「どのくらいの頻度で..?」
     $cmd = "$0 -% 0.7 1.8 5.5 7.7 18.4 12.9 21.3 8.5 23.2" when 'n1' ; 
     #  ↓ https://prtimes.jp/main/html/rd/p/000000231.000087626.html 月々いくらまでなら?
-    $cmd = "$0 -D-2% -y-1.. -a0.0007 -% 11.2 29.3 28.2 11.6 9.7 10.1" when 'n2' ; 
+    $cmd = "$0 -D-2% -y-1.. -a0.07% -% 11.2 29.3 28.2 11.6 9.7 10.1" when 'n2' ; 
   } for $o{T} ; 
   say STDERR BOLD ITALIC YELLOW " >> " , $cmd ; 
   system $cmd ; 
