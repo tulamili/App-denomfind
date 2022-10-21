@@ -21,6 +21,7 @@ CHECK {$mpu = eval 'use Math::Prime::Util qw[ factor factor_exp ]; 1 ' || 0 } # 
 & test if exists $o{T} ; 
 HELP_MESSAGE () unless @ARGV ;
 
+### テストパターン
 sub test () { 
   my $cmd ;
   do { 
@@ -46,7 +47,10 @@ sub test () {
   exit ; # systemで exit するはずだが、違うコードを増やすことも考え、ここに exitと書いた。
 }
 
+### テスト以外はここから開始
+
 $o{g} //= 12 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
+$o{y} //= '1..' ; # 何か候補があれば表示とした。
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
 my $q = @nums ;
@@ -161,7 +165,7 @@ sub npack ( @ )  {
   return reduce {  $a =~ /(\d+)$/ ; if( $b-$1==1 ){ "$a~$b" }else{ "$a:$b" } }  @_ ;
 }
 
-sub yfilter ( $ ) { 
+sub yfilter ( $ ) { # メモ : state をいくつか使った読解のしにくいプログラムであること、もっと良い方法がありそうなこと。
   state @y = exists $o{y} ? &yparse ( $o{y} ) : () ;
   state @F = map { my $t = $_ ; ( grep { $y[$_] == $t } 0 .. $#y ) ? 1 : 0 } 0 .. scalar @nums ; 
   return ! exists $o{y} || $F[ $_[0] ] ; 
@@ -273,9 +277,9 @@ sub HELP_MESSAGE {
   -c : 入力された数は、切り上げられた数であると見なす。(ceil)
   -f : 入力された数は、切り捨てられた数であると見なす。(floor)
   -g num : 何個の出力を得るかの指定。未指定なら12。"Inf" も指定可能。(get, greatest)
-  -g start,num : コロンを使うと、分母をどの数から始めるかを指定が可能。
+  -g start,num : コロンを使うと、分母をどの数から始めるかを指定が可能。(startからnum個)
   -g start,-num : numにマイナスの符号を付加すると、start から 1ずつ減少させながら 最大 num個探索する。
-  -y EVAL : fit値(整数を区間内に持つ対応する分子の個数)がどの値の場合に出力するかを指定する。,や..を使って指定。
+  -y numranges : fit値(整数を区間内に持つ対応する分子の個数)がどの値の場合に、その分母の行を出力するかを指定する。,や..を使って指定。
   -y , : fit値が最大の場合(引数として与えた割合の近似値の個数)のみ出力。( -y のパラメタは書式はやや複雑。)
   -a num : 与えられた数値との差の絶対値が num 以下である 分数表示を見つける。(実験的実装。)
   -5 2 : 既に四捨五入された値の最下位1桁をさらに四捨五入していたことを仮定する。(例. 0.45 → 0.5 → 1)
@@ -294,7 +298,7 @@ sub HELP_MESSAGE {
   -Q : 分子の候補値全て表示。2q+1とか5q+3 など表示(qは何かの整数を意味する)。Math::Prime::Utilが導入済みなら素因数分解もする(割合の数が1個の場合)。
   -2 0 : 二次情報の出力を抑制する。
   -M 0 : ある分母に対して、全ての候補の分子が分母と同じ整数で割れる場合(≒約分可能)は、出力を抑制。
-  -T testname : このプログラムのテスト。testname は番号で1,2,3, v1,v2,v3, o1,o2,o3,o4 がある。
+  -T testname : このプログラムのテスト。testname は1,2,3, v1,v2,v3, o1,o2,o3,o4 がある。
   --help : このヘルプを表示する。(ただしPod::PerldocJp を一度インストールすると perldoc $0 でも可能。)
 
   補足 : 
