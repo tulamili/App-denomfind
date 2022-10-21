@@ -45,7 +45,7 @@ sub test () {
     #  ↓ https://trend-research.jp/3038/ の「どのくらいの頻度で..?」
     $cmd = "$0 -% 0.7 1.8 5.5 7.7 18.4 12.9 21.3 8.5 23.2" when 'n1' ; 
     #  ↓ https://prtimes.jp/main/html/rd/p/000000231.000087626.html 月々いくらまでなら?
-    $cmd = "$0 -D-2% -y-1.. -a0.07% -% 11.2 29.3 28.2 11.6 9.7 10.1" when 'n2' ; 
+    $cmd = "$0 -D-2%,----------- -y-1.. -a0.07% -% 11.2 29.3 28.2 11.6 9.7 10.1" when 'n2' ; 
   } for $o{T} ; 
   say STDERR BOLD ITALIC YELLOW " >> " , $cmd ; 
   system $cmd ; 
@@ -54,10 +54,13 @@ sub test () {
 
 ### テスト以外はここから開始
 
-$o{g} //= 12 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
-$o{y} //= '1..' ; # 何か候補があれば表示とした。
 $o{D} //= 0 unless grep { m/[DIQ]/ } keys %o ; 
-$o{a} =~ s/(^.*)%$/"$1"*"0.01"/er if exists $o{a} && $o{a} =~ /%$/ ;  
+$o{D} =~ s/,(.*)$// if exists $o{D};
+my $Demp = $1 // '-' ; 
+$o{g} //= 12 ; # 取得する分母の個数の最大値 なお、コンマ区切りで、取得分母の開始値(最小値)も指定可能。
+$o{a} =~ s/(^.*)%$/"$1"*"0.01"/er if exists $o{a} && $o{a} =~ /%$/ ;  # -a の指定が % で終わる場合の処理
+$o{y} //= '1..' ; # 何か候補があれば表示とした。
+
 do { pipe *STDIN , my $WH ; print {$WH} join "\n" , splice @ARGV , 0 } ;
 my @nums = & readNums ;  # $q は、-y のオプションのパラメータでevalする際に、裏技的に使うことを意図している。
 my $q = @nums ;
@@ -112,7 +115,7 @@ sub main ( ) {
       my @int = numInts ( $mA , $mB , $mC ) ; #区間に含まれる整数の最小と最大。返値の要素数は1の場合も0の場合もある。
       push @nu , $int[0]..$int[-1] if @int ;
       $kosu ++ if @int ;
-      push @out , CYAN ( @int ? join '~', map { dform ( $_ , $nums[$i] ) } @int : '-' ) if exists $o{D} ; 
+      push @out , CYAN ( @int ? join '~', map { dform ( $_ , $nums[$i] ) } @int : $Demp ) if exists $o{D} ; 
       push @out , do{ my $str=&sect($mA,$mB,$mC) ; @int ? GREEN $str : $str } if $o{I} ; 
     }
     sub sect($$$){
@@ -301,6 +304,7 @@ sub HELP_MESSAGE {
   -D -num% : 除算の式と共に、ずれが分かるように、小数点以下num桁のパーセントと共に示す。
   -D -num%% : 除算の式と共に、ずれが分かるように、小数点以下num桁のパーミリアド(1万分の1)と共に示す。
   -D -{N}ppm :  除算の式と共に、ずれが分かるように、小数点以下num桁のppm(100万分の1)と共に示す。
+  -D str1,str2 : -D でコンマがある場合は、前半は上記の説明の通りの指定に使われて、後半は該当する分子が存在しない場合のセルを埋めるのに使う。
   -I : 分子の数値を知るべくその半区間を表示す。(Interval)
   -Q : 分子の候補値全て表示。2q+1とか5q+3 など表示(qは何かの整数を意味する)。Math::Prime::Utilが導入済みなら素因数分解もする(割合の数が1個の場合)。
   -2 0 : 二次情報の出力を抑制する。
