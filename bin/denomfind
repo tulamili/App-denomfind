@@ -18,7 +18,6 @@ use List::Util qw [ reduce min max ] ;
 use FindBin qw[ $Script ] ; 
 my $mpu ; # Math::Prime::Util のモジュールがインストールされているか点検。
 CHECK {$mpu = eval 'use Math::Prime::Util qw[ factor factor_exp ]; 1 ' || 0 } # 他にBEGIN INIT UNITCHECK が使える。
-#say 123 ;exit;
 & test if exists $o{T} ; 
 HELP_MESSAGE () unless @ARGV ;
 
@@ -292,7 +291,7 @@ sub HELP_MESSAGE {
   -D -num%% : 除算の式と共に、ずれが分かるように、小数点以下num桁のパーミリアド(1万分の1)と共に示す。
   -D -{N}ppm :  除算の式と共に、ずれが分かるように、小数点以下num桁のppm(100万分の1)と共に示す。
   -I : 分子の数値を知るべくその半区間を表示す。(Interval)
-  -Q : 分子の候補となる値を全て出す。簡便な表示となる。さらに 2q+1とか5q+3 などと出力(奇数とか1のくらいが3または8などが分かる。)
+  -Q : 分子の候補値全て表示。2q+1とか5q+3 など表示(qは何かの整数を意味する)。Math::Prime::Utilが導入済みなら素因数分解もする(割合の数が1個の場合)。
   -2 0 : 二次情報の出力を抑制する。
   -M 0 : ある分母に対して、全ての候補の分子が分母と同じ整数で割れる場合(≒約分可能)は、出力を抑制。
   -T testname : このプログラムのテスト。testname は番号で1,2,3, v1,v2,v3, o1,o2,o3,o4 がある。
