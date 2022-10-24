@@ -1,0 +1,84 @@
+#!/usr/bin/perl
+
+use 5.014 ; use warnings ; 
+use Getopt::Std ; getopts 'd:m:t:' , \my%o ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use List::Util qw[ min ] ; 
+use POSIX qw [ floor ceil ] ;
+use Math::Random::MT qw[ rand ] ;
+
+$o{d} //= 1 ; # 10 ** $o{d} の数が最大
+$o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
+$o{t} //= 200 ; # 各分母で、何回ランダムに試すか? 
+my $u10 = 10 ** $o{d} ; 
+my @f2d ; # @{ $f2d{ $fig } } = [ denom1, denom2, denom3 .. ]のようにになる
+# ↑小数点以下$o{d}桁の fig という数の並び(000-999)に対して、次を格納。
+# {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
+
+for my $den ( 1 .. $u10 ) {  # den ← denominator
+  $SIG{INT} = {say STDERR FAINT BOLD RED $den } ; 
+  #say $den ;
+  print "$den\t" ; 
+  ##$f2d [ $den ] = [] ;
+  my @figs = () ;
+  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; ## **1 ;  $_ は 元々$den 
+
+  my %freq ; 
+  for my $i ( 0 .. $o{t} - 1 ) { 
+    my @cand = & pickR ( \@figs ) ; 
+    #print YELLOW "@cand -> " ;
+    my %seen ; 
+    grep { $seen { $_ } ++ }  @{ $f2d [ $_ ] } for @cand ;
+    my @dens = grep { $seen{ $_ } == @cand } keys %seen ; 
+    my $smaller = @dens ; # 0だと $den が最小と確定。kだと$denが(k+1)番目であり、さらにk個の小さいものあり
+    #print GREEN "@t ; " ; 
+    $freq{$smaller} ++ ;
+  }
+  print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
+  push @{ $f2d [ $_ ] } , $den for @figs ;  ## **2 
+  say '' ;
+  #say "@figs" ;
+  #say join ":" , @{ $f2d [ $den ] } ; 0超$u10未満の数
+  #say "$den : " , join ", " , & pickR ( \@figs ) ; 
+
+}
+
+sub pickR ( $ ){ 
+  my @cand = @{ $_[0] } ;
+  my @ret ; # = () ; 
+  push @ret , splice @cand , rand( @cand ) , 1 for 1 .. min $o{m} , scalar @cand ; 
+  return @ret ;
+}
+
+exit ;
+
+
+
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+=head1
+
+ $0 
+
+  オプション: 
+
+  -d N : 1から10^d まで調べることになる。正の整数。
+  -m N  : 
+  -t N   : 
+
+=cut
