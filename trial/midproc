@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+
+use 5.030 ; use warnings ; 
+use Getopt::Std ; getopts 'v:' , \my%o ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use List::Util qw[ min sum sum0 ] ; 
+use POSIX qw [ floor ceil ] ;
+use Math::Random::MT qw[ rand ] ;
+
+$o{v} //= 10 ; # どの値まで追跡するか 〜$o{v}
+while ( <> ) { 
+  chomp ; 
+  my @F = split /\t/ , $_ , 0 ; 
+  # say CYAN join ":", @F ; 
+  my $denom = shift @F ; 
+  my @fq ; 
+  #my $sum = 0 ; 
+  $fq [ $_[0] ] = $_[1] while  @_ =  splice @F ,0, 2 ;
+  #$sum += $fq [ $_ ] // 0 for $o{v} + 1 .. $#fq ;
+  #$sum = do{ my $s=0 ; $s += $fq [ $_ ] // 0 for $o{v} + 1 .. $#fq ; $s } ;
+  my $sum = sum0 grep $_, @fq [ $o{v} + 1 .. $#fq ] ;#  // 0;
+  say join "\t" , ( map {$fq[$_]//0} 0 .. $o{v} -1 ) , $sum  ;
+}
+exit ;
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+  $0 
+    もう一つのプログラムの出力をR言語で処理しやすいように、整形する。
+    den v1 f[v1] v2 f[v2] v3 f[v3] .. となっているところを
+    f[0] f[1] f[2] ... f[$o{v}] sum_f[i]
+
+  開発上のメモ: 
+    +1 とか -1 で混乱するので、もう一個のプログラムの出力の形式を変更したい。
+    もうひとつ、行末にタブ文字が入っていて混乱。
+
+=head1
+
+ $0 
+=cut
