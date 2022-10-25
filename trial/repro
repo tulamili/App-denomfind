@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use 5.014 ; use warnings ; 
+use 5.030 ; use warnings ; 
 use Getopt::Std ; getopts 'd:m:t:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
@@ -16,7 +16,8 @@ my @f2d ; # @{ $f2d{ $fig } } = [ denom1, denom2, denom3 .. ]のようににな�
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
 
 for my $den ( 1 .. $u10 ) {  # den ← denominator
-  $SIG{INT} = {say STDERR FAINT BOLD RED $den } ; 
+  #say STDERR FAINT BOLD RED $den ;
+  $SIG{INT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
   #say $den ;
   print "$den\t" ; 
   ##$f2d [ $den ] = [] ;
@@ -37,23 +38,16 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
   print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
   push @{ $f2d [ $_ ] } , $den for @figs ;  ## **2 
   say '' ;
-  #say "@figs" ;
-  #say join ":" , @{ $f2d [ $den ] } ; 0超$u10未満の数
-  #say "$den : " , join ", " , & pickR ( \@figs ) ; 
-
 }
 
 sub pickR ( $ ){ 
   my @cand = @{ $_[0] } ;
   my @ret ; # = () ; 
-  push @ret , splice @cand , rand( @cand ) , 1 for 1 .. min $o{m} , scalar @cand ; 
+  push @ret , splice @cand , rand( scalar @cand ) , 1 for 1 .. min $o{m} , scalar @cand ; 
   return @ret ;
 }
 
 exit ;
-
-
-
 
 sub VERSION_MESSAGE {}
 sub HELP_MESSAGE {
