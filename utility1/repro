@@ -18,17 +18,18 @@ my @f2d ; # @{ $f2d{ $fig } } = [ denom1, denom2, denom3 .. ]のようににな�
 
 for my $den ( 1 .. $u10 ) {  # den ← denominator
   $SIG{INT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
-  print "$den\t" ; 
+  print "$den\t" ; # 1. 分母を出力
+  # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
   push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; ## **1 ;  $_ は 元々$den 
 
   my %freq ; 
-  for my $i ( 0 .. $o{t} - 1 ) { 
-    my @cand = & pickR ( \@figs ) ; 
+  for my $i ( 0 .. $o{t} - 1 ) { # $o{t}回の反復
+    my @cand = & pickR ( \@figs ) ; # ここで$o{m}個(足りない場合は全部)を@figsからランダムに取り出す。
     my %seen ; 
     grep { $seen { $_ } ++ }  @{ $f2d [ $_ ] } for @cand ;
-    my @dens = grep { $seen{ $_ } == @cand } keys %seen ; 
-    my $smaller = @dens ; # 0だと $den が最小と確定。kだと$denが(k+1)番目であり、さらにk個の小さいものあり
+    my @dens = grep { $seen{ $_ } == @cand } keys %seen ; # ここまでの数行で共通部分の計算を行った。
+    my $smaller = $o{o} + @dens ; # 0だと $den が最小と確定。kだと$denが(k+1)番目であり、さらにk個の小さいものあり
     $freq{$smaller} ++ ;
   }
   print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
@@ -36,7 +37,7 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
   say '' ;
 }
 
-sub pickR ( $ ){ 
+sub pickR ( $ ){ ## $den-1くらいの長さの配列を@candにコピーは重いので、ダステンフェルドの手法に書き換えたい。
   my @cand = @{ $_[0] } ;
   my @ret ; # = () ; 
   push @ret , splice @cand , rand( scalar @cand ) , 1 for 1 .. min $o{m} , scalar @cand ; 
