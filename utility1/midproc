@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts ':av:o:' , \my%o ; 
+use Getopt::Std ; getopts ':=av:o:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min sum sum0 ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -9,6 +9,13 @@ use Math::Random::MT qw[ rand ] ;
 
 $o{v} //= 10 ; # どの値まで追跡するか 〜$o{v}
 $o{o} //= 1 ; # offset 
+
+my @out = do { my $MAX = $o{o} + $o{v} - 1 ; $o{o} .. $MAX , "over${MAX}" } ;
+unshift @out , "avg" if $o{a} ; 
+unshift @out , "den" if $o{':'} ; 
+say join "\t" , @out ;
+
+
 while ( <> ) { 
   chomp ; 
   my @F = split /\t/ , $_ , 0 ; 
@@ -51,7 +58,7 @@ sub HELP_MESSAGE {
 
   オプション: 
     -o N : 未指定なら1。「何番目であるか」をN始まりにする。作成当初は0で対応していたためのオプション。
-    -v N  : 1からN番目まではそれぞれの値。それ以上(N+1)以上は合算。
+    -v N  : 最小番目を含めてN個まではそれぞれの値。それ以上(N+1)以上は合算。
     -a : 平均を算出。
     -: ; 分母を最も左の列に挿入。
 
