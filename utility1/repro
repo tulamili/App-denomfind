@@ -20,8 +20,7 @@ $o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
 $o{t} //= 200 ; # 各分母で、何回ランダムに試すか? 
 $o{o} //= 1 ; 
 my $u10 = 10 ** $o{d} ; 
-#- my @f2d ; #- @{ $f2d{ $fig } } = [ denom1, denom2, denom3 .. ]のようにになる
-my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようにになる
+my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようになる
 
 # ↑小数点以下$o{d}桁の fig という数の並び(000-999)に対して、次を格納。
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
@@ -36,11 +35,6 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
   my %freq ; 
   for my $i ( 0 .. $o{t} - 1 ) { # $o{t}回の反復
     my @cand = & pickR ( \@figs ) ; # ここで$o{m}個(足りない場合は全部)を@figsからランダムに取り出す。
-    #- my %seen ; 
-    #- grep { $seen { $_ } ++ }  @{ $f2d [ $_ ] } for @cand ;
-    #- my @dens = grep { $seen{ $_ } == @cand } keys %seen ; # ここまでの数行で共通部分の計算を行った。
-    #- my $smaller = $o{o} + @dens ; # 0だと $den が最小と確定。kだと$denが(k+1)番目であり、さらにk個の小さいものあり
-    #- $freq{$smaller} ++ ; # 頻度表に集計である。
     my $Nth = $o{o} ; 
     if ( @cand ) { 
       my %comm ;#  = map {($_,1)} $f2d [ shift @cand ]  ; ## 
