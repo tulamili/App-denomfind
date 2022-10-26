@@ -1,11 +1,14 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts 'd:m:o:t:' , \my%o ; 
+use Getopt::Std ; getopts 'd:m:o:s:t:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
 use Math::Random::MT qw[ rand ] ;
+
+my $seed = exists $o{s} ? srand $o{s} : srand ;
+say STDERR RED BOLD FAINT "Random seed = $seed" ;
 
 $o{d} //= 1 ; # 10 ** $o{d} の数が最大
 $o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
@@ -32,9 +35,9 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
     my $smaller = $o{o} + @dens ; # 0だと $den が最小と確定。kだと$denが(k+1)番目であり、さらにk個の小さいものあり
     $freq{$smaller} ++ ;
   }
-  print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
-  push @{ $f2d [ $_ ] } , $den for @figs ;  ## **2 
-  say '' ;
+  #print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
+  say join "\t" , map { ${_} , $freq{$_} } sort { $a <=> $b } keys %freq ; 
+  push @{ $f2d [ $_ ] } , $den for @figs ;  ## **2 次の分母に行く前の、重要な処理である。
 }
 
 sub pickR ( $ ){ ## $den-1くらいの長さの配列を@candにコピーは重いので、ダステンフェルドの手法に書き換えたい。
@@ -72,6 +75,7 @@ sub HELP_MESSAGE {
   -m N : 1〜 10**d の各分母Dに対して、1からD-1の中から取れる限りN個の整数を取り出して、それぞれを分子とする。未指定だと3。(multitude?)
   -t N : 各分子に対して、モンテカルロ法を N 回適用する。未指定だと200(trial)
   -o N : 未指定だと1。「Dに対して、Dを逆算した場合、候補の中からDが何番目に小さな数であるか」の数え方は通常は1始まりだが。0始まりにもできる。(offset)
+  -s N : ランダムシードの指定。
 
   使用例: 
     $0 -d1 # 簡単に。
