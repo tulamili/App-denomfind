@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts 'd:m:o:s:t:' , \my%o ; 
+use Getopt::Std ; getopts '2:d:m:o:s:t:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -11,6 +11,7 @@ my $t0 = [gettimeofday] ;
 
 my $seed = exists $o{s} ? srand $o{s} : srand ;
 END{ 
+  exit if 0 eq ($o{2}//'') ; 
   say STDERR RED BOLD FAINT "Random seed = $seed" ;
   say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
 }
