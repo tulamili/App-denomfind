@@ -6,9 +6,14 @@ use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
 use Math::Random::MT qw[ rand ] ;
+use Time::HiRes qw[ gettimeofday tv_interval ]; 
+my $t0 = [gettimeofday] ;
 
 my $seed = exists $o{s} ? srand $o{s} : srand ;
-say STDERR RED BOLD FAINT "Random seed = $seed" ;
+END{ 
+  say STDERR RED BOLD FAINT "Random seed = $seed" ;
+  say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
+}
 
 $o{d} //= 1 ; # 10 ** $o{d} の数が最大
 $o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
