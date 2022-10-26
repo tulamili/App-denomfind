@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts 'av:o:' , \my%o ; 
+use Getopt::Std ; getopts ':av:o:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min sum sum0 ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -19,6 +19,7 @@ while ( <> ) {
   my $oversum = sum0 grep $_, @fq [ $o{v} + 1 .. $#fq ] ;
   my @out = map $fq[$_]//0 , $o{o} .. $o{v} + $o{o} - 1  ; # < 
   unshift @out , sprintf '%6.3f' , $avg + $o{o} if $o{a} ; # < 
+  unshift @out , $denom if $o{':'} ; # -: により分母の数を左端に挿入。
   say join "\t" , @out , $oversum ; # <- - 0から
 }
 exit ;
@@ -52,9 +53,9 @@ sub HELP_MESSAGE {
     -o N : 未指定なら1。「何番目であるか」をN始まりにする。作成当初は0で対応していたためのオプション。
     -v N  : 1からN番目まではそれぞれの値。それ以上(N+1)以上は合算。
     -a : 平均を算出。
+    -: ; 分母を最も左の列に挿入。
 
   開発上のメモ: 
-    +1 とか -1 で混乱するので、もう一個のプログラムの出力の形式を変更したい。
     もうひとつ、行末にタブ文字が入っていて混乱。
     ※ 尤度の考え方をいろいろ考え中。ある分母において、2番目に来たら、その尤度は低いとかって判断して良いのだろうか?
 
