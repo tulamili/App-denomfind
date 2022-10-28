@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+
+use 5.030 ;
+use strict ; 
+use warnings ; 
+use Getopt::Std ; getopts 'u:' , \my%o ;
+use Regexp::Common qw [ number ] ; 
+use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use List::Util qw [ min max uniq ] ;
+
+
+undef $/ ; 
+my $M = 15 ;
+my $text = <> ; 
+my @parts = split /($RE{num}{real})/o , $text , -1 ; 
+my @nums = sort { $a <=> $b } grep /$RE{num}{real}/o , @parts ;
+@nums = uniq @nums if 0 ne ($o{u}//'');
+my @sec  = map $nums[ $#nums * (2*$_+1) / (2*$M) ] , 0 .. $M-1   ; 
+#print YELLOW join " " , @sec  ; #exit ;
+my %n2c ; 
+my $c = 0 ; 
+for ( @nums ) { 
+	#say RED "$_ "  ,$c, " " ,$sec[$c] ;
+	$c = min $c+1 , $M if $_ > $sec [ $c ] // "inf"; # min $c+1 ,
+	$n2c { $_ } = $c ; 
+}
+for ( @parts ) { 
+   if ( /$RE{num}{real}/ ){ 
+   	  my $c = $n2c{$_} ;#say RED $c ;
+        my $R = max 0 , min 5 , $c - $M + 7  ; 
+   	  my $G = min 2 , 7.5 - abs ( 7.5 - $c )  ;
+   	  my $B = max 0 , min 5, 7 - $c  ;
+      print color( "on_rgb$R$G$B" ) . "$_:$c-$R$G$B" .color( 'reset' ) ;
+      #print color( "on_rgb$R$G$B" ) . "$_" .color( 'reset' ) ;
+   } else { 
+      print $_ ;
+   }
+}
+print YELLOW join " " , @sec  ; #exit ;
+exit ;
+
+## ヘルプとバージョン情報
+
+sub HELP_MESSAGE {
+    use FindBin qw[ $Script ] ; 
+    $ARGV[1] //= '' ;
+    open my $FH , '<' , $0 ;
+    while(<$FH>){
+        s/\$0/$Script/g ;
+        print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+    }
+    close $FH ;
+    exit 0 ;
+}
+
+=encoding utf8 
+
+=head1
+
+ $0 
+
+  オプション: 
+
+   -u 0 : 数値に対して uniq の処理をしない。
+
+=cut 
