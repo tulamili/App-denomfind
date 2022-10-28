@@ -3,7 +3,7 @@
 use 5.030 ;
 use strict ; 
 use warnings ; 
-use Getopt::Std ; getopts 'u:' , \my%o ;
+use Getopt::Std ; getopts '~r:u:' , \my%o ;
 use Regexp::Common qw [ number ] ; 
 use Term::ANSIColor qw[ :constants color ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw [ min max uniq ] ;
@@ -12,9 +12,15 @@ use List::Util qw [ min max uniq ] ;
 undef $/ ; 
 my $M = 15 ;
 my $text = <> ; 
+my ($v1,$v2,$v3) = split /,/, $o{r} //''  , 3 ; # -G 
 my @parts = split /($RE{num}{real})/o , $text , -1 ; 
-my @nums = sort { $a <=> $b } grep /$RE{num}{real}/o , @parts ;
+my @nums = grep /$RE{num}{real}/o , @parts ;
+@nums = grep { $v1 <= $_ && $_ <= $v2 } @nums if defined $v1 ;
 @nums = uniq @nums if 0 ne ($o{u}//'');
+@nums = sort { $a <=> $b } @nums ;
+
+
+
 my @sec  = map $nums[ $#nums * (2*$_+1) / (2*$M) ] , 0 .. $M-1   ; 
 #print YELLOW join " " , @sec  ; #exit ;
 my %n2c ; 
@@ -26,10 +32,15 @@ for ( @nums ) {
 }
 for ( @parts ) { 
    if ( /$RE{num}{real}/ ){ 
-   	  my $c = $n2c{$_} ;#say RED $c ;
-        my $R = max 0 , min 5 , $c - $M + 7  ; 
-   	  my $G = min 2 , 7.5 - abs ( 7.5 - $c )  ;
-   	  my $B = max 0 , min 5, 7 - $c  ;
+      if (defined $v1 and $_ < $v1 || $v2 < $_ ) { 
+         do { print ; next } if 0 eq ($v3//'') ;
+         my $c = $_ < $v1 ? 0 : $M ;
+      }
+      $c //= $n2c{$_} ;#say RED $c ;
+      my $R = max 0 , min 5 , $c - $M + 7  ; 
+   	my $G = min 2 , 7.5 - abs ( 7.5 - $c )  ;
+   	my $B = max 0 , min 5, 7 - $c  ;
+      ($R,$B)=($B,$R) if $o{'~'} ; 
       print color( "on_rgb$R$G$B" ) . "$_:$c-$R$G$B" .color( 'reset' ) ;
       #print color( "on_rgb$R$G$B" ) . "$_" .color( 'reset' ) ;
    } else { 
@@ -59,8 +70,14 @@ sub HELP_MESSAGE {
 
  $0 
 
+   入力のテキストを全部読み取り、数値の部分を抽出して、背景の色を付ける。
+   最小値は青、緑を経由して、最大値は赤。16段階。
+   出現数値をuniq化した上で、30分位点をとり、奇数番目で区切る。
+
   オプション: 
 
    -u 0 : 数値に対して uniq の処理をしない。
+   -g L,U[,0] : 着色する数値範囲を指定する。3番目に0を入れると、範囲外の数値は着色をしない。
+   -~ : 色の、赤と青の傾向を反転する。
 
 =cut 
