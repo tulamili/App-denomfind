@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts '2:d:Fm:o:s:t:' , \my%o ; 
+use Getopt::Std ; getopts '2:d:Fm:o:s:t:T:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -9,10 +9,24 @@ use Math::Random::MT qw[ rand ] ;
 use Time::HiRes qw[ gettimeofday tv_interval ]; 
 my $t0 = [gettimeofday] ;
 
+if ( exists $o{T} ) { 
+  my $cmd ; 
+  do { 
+    no warnings 'experimental::smartmatch' ; 
+    $cmd = "$0 -d1 -F 19%" when '19%' ; 
+    $cmd = "$0 -d1 -F 19%" when '.19' ; 
+    $cmd = "$0 -d1 -F 19%" when '20%' ; 
+  } for $o{T} ;
+  system $cmd ; 
+  exit ;
+}
+
+
 my $seed = exists $o{s} ? srand $o{s} : srand ;
 END{ 
+  exit if exists $o{T} ;
   exit if 0 eq ($o{2}//'') ; 
-  say STDERR RED BOLD FAINT "Random seed = $seed" ;
+  say STDERR RED BOLD FAINT "Random seed = $seed" if ! $o{F} ;
   say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
 }
 
@@ -112,6 +126,6 @@ sub HELP_MESSAGE {
     $0 -d1 # 簡単に。
 
   開発メモ: 
-    * ランダムに分子をとるにしても、分数が12.5%以下の場合のみというような制約を付けたい。
+    * -@ で特定の分母の値またはその集合だけ、出力したい。
 
 =cut
