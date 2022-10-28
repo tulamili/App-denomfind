@@ -18,6 +18,7 @@ if ( exists $o{T} ) {
     $cmd = "$0 -d1 -F 19%" when '19%' ; 
     $cmd = "$0 -d1 -F 19%" when '.19' ; 
     $cmd = "$0 -d1 -F 19%" when '20%' ; 
+    $cmd = "$0 -d1 -F 1.25" when '1.25' ; # 考察を深めるパターン 1.3 まで有られる。1.249999も与える必要あり。
     $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4260 となる。
   } for $o{T} ;
   system $cmd ; 
