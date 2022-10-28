@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts '2:d:Fm:o:s:t:T:' , \my%o ; 
+use Getopt::Std ; getopts '2:d:f:Fm:o:s:t:T:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -37,7 +37,8 @@ END{
 $o{d} //= 1 ; # 10 ** $o{d} の数が最大
 $o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
 $o{t} //= 200 ; # 各分母で、何回ランダムに試すか? 
-$o{o} //= 1 ; 
+$o{f} //= 1 ; # 開始する最小の分母
+$o{o} //= 1 ; # 最小番目は 1 番目であることを指定。以前作り始めた頃の形式に合わせるための便宜で 0も指定可能。
 $ARGV[0] //= '99.9999999999%' ;
 my $uFrac = $ARGV[0] =~ s/%$// ? "$ARGV[0]" * "0.01" : $ARGV[0] ;
 my $u10 = 10 ** $o{d} ; 
@@ -46,7 +47,7 @@ my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のよう�
 # ↑小数点以下$o{d}桁の fig という数の並び(000-999)に対して、次を格納。
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
 
-for my $den ( 1 .. $u10 ) {  # den ← denominator
+for my $den ( $o{f} .. $u10 ) {  # den ← denominator
   $SIG{CONT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
@@ -101,7 +102,7 @@ sub HELP_MESSAGE {
 
 =head1
 
-  $0 [ -d 1 ] [-m 3] [-t 200] [-o 1] [-F] 引数
+  $0 [-d 1] [-f 1] [-m 3] [-t 200] [-o 1] [-F] 引数
 
    各整数分母に対して、分数を-dで指定される小数点以下の桁数で四捨五入で現した時に、
    それらの数を (同時に) -mで指定される個数取り出した場合に、
@@ -115,6 +116,7 @@ sub HELP_MESSAGE {
   オプション: 
 
   -d N : 1から10**d まで調べることになる。正の整数。(digit)
+  -f N : 計算対象となる分母の最小値を指定。
   -m N : 1〜 10**d の各分母Dに対して、1からD-1の中から取れる限りN個の整数を取り出して、それぞれを分子とする。未指定だと3。(multitude?)
   -t N : 各分子に対して、モンテカルロ法を N 回適用する。未指定だと200(trial)
   -o N : 未指定だと1。「Dに対して、Dを逆算した場合、候補の中からDが何番目に小さな数であるか」の数え方は通常は1始まりだが。0始まりにもできる。(offset)
@@ -130,8 +132,9 @@ sub HELP_MESSAGE {
     $0 -d1 # 簡単に。
 
   開発メモ: 
-    * -@ で特定の分母の値またはその集合だけ、出力したい。
+    * -f 0 を指定しても、動く。何が起きているのか? 
     * 「ぴったり50%以下で計算するか」もしくは「50%未満で計算するか」の意味を考えたい。
     * -F で $u10まで出すことに意味はあるか。分かりやすいから良いか。自明と見なして、$u10 -1にとどめた方が良いか?
+
 
 =cut
