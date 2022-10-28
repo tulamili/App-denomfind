@@ -25,7 +25,7 @@ my @sec  = map $nums[ $#nums * (2*$_+1) / (2*$M) ] , 0 .. $M-1   ;
 #print YELLOW join " " , @sec  ; #exit ;
 my %n2c ; 
 my $c = 0 ; 
-for ( @nums ) { 
+for ( uniq @nums ) { 
 	#say RED "$_ "  ,$c, " " ,$sec[$c] ;
 	$c = min $c+1 , $M if $_ > $sec [ $c ] // "inf"; # min $c+1 ,
 	$n2c { $_ } = $c ; 
