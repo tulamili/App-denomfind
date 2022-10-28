@@ -20,6 +20,8 @@ $o{d} //= 1 ; # 10 ** $o{d} の数が最大
 $o{m} //= 3 ; # 何個の異なる数を取り出すか。ただし0より大。
 $o{t} //= 200 ; # 各分母で、何回ランダムに試すか? 
 $o{o} //= 1 ; 
+$ARGV[0] //= '99.99999999%' ;
+my $uFrac = $ARGV[0] =~ s/%$// ? "$ARGV[0]" * "0.01" : $ARGV[0] ;
 my $u10 = 10 ** $o{d} ; 
 my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようになる
 
@@ -30,7 +32,7 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
   $SIG{CONT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
-  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; # 
+  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. ($den * $uFrac ) ; # $den-1
   goto F if $o{F} ;
   my %freq ; 
   print "$den\t" ; # 1. 分母を出力
@@ -50,7 +52,8 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
   F: $f2d [ $_ ] { $den } = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
 }
 
-do { say join "\t" , sprintf(".%0$o{d}d",$_) , sort {$a<=>$b} keys %{$f2d[$_]} for 1.. $u10/2 } if $o{F} ; 
+#do{ say join "\t", sprintf(".%0$o{d}d",$_), sort{$a<=>$b} keys %{$f2d[$_]} for 1..$u10/2 } if $o{F} ; 
+do{ say join "\t", sprintf("%.$o{d}f",$_/$u10), sort{$a<=>$b} keys %{$f2d[$_]} for 1..$#f2d } if $o{F} ; 
 
 
 exit ;
@@ -80,7 +83,16 @@ sub HELP_MESSAGE {
 
 =head1
 
- $0 
+  $0 [ -d 1 ] [-m 3] [-t 200] [-o 1] [-F] 引数
+
+   各整数分母に対して、分数を-dで指定される小数点以下の桁数で四捨五入で現した時に、
+   それらの数を (同時に) -mで指定される個数取り出した場合に、
+   元の分母が小さい順に何番目の候補として現れるかを、
+   -t で指定される回数だけ反復するモンテカルロ法で頻度集計する。
+   各整数分母は1から始まり、-dで指定される桁数以内の整数である(最大は9..9である)。
+
+   引数は分数の最大値を指定する。指定しない場合は 99.99999999% (9が8個) となる。
+
 
   オプション: 
 
