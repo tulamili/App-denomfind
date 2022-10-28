@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use 5.030 ; use warnings ; 
-use Getopt::Std ; getopts '2:d:m:o:s:t:' , \my%o ; 
+use Getopt::Std ; getopts '2:d:Fm:o:s:t:' , \my%o ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
@@ -28,12 +28,13 @@ my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のよう�
 
 for my $den ( 1 .. $u10 ) {  # den ← denominator
   $SIG{INT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
-  print "$den\t" ; # 1. 分母を出力
+
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
-  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; ## **1 ;  $_ は 元々$den 
-
+  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; # 
+  goto F if $o{F} ;
   my %freq ; 
+  print "$den\t" ; # 1. 分母を出力
   for my $i ( 0 .. $o{t} - 1 ) { # $o{t}回の反復
     my @cand = & pickR ( \@figs ) ; # ここで$o{m}個(足りない場合は全部)を@figsからランダムに取り出す。
     my $Nth = $o{o} ; 
@@ -46,11 +47,14 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
     $freq{$Nth} ++ ; # 頻度表に集計である。
     
   }
-  #print "${_}\t$freq{$_}\t" for sort { $a <=> $b } keys %freq ; 
   say join "\t" , map { ${_} , $freq{$_} } sort { $a <=> $b } keys %freq ; 
-  #- push @{ $f2d [ $_ ] } , $den for @figs ;  ## **2 次の分母に行く前の、重要な処理である。
-  $f2d [ $_ ] { $den } = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
+  F: $f2d [ $_ ] { $den } = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
 }
+
+do { say join "\t" , sprintf(".%0$o{d}d",$_) , sort {$a<=>$b} keys %{$f2d[$_]} for 1.. $u10/2 } if $o{F} ; 
+
+
+exit ;
 
 sub pickR ( $ ){ ## $den-1くらいの長さの配列を@candにコピーは重いので、ダステンフェルドの手法に書き換えたい。
   my @cand = @{ $_[0] } ;
@@ -58,8 +62,6 @@ sub pickR ( $ ){ ## $den-1くらいの長さの配列を@candにコピーは重�
   push @ret , splice @cand , rand( scalar @cand ) , 1 for 1 .. min $o{m} , scalar @cand ; 
   return @ret ;
 }
-
-exit ;
 
 sub VERSION_MESSAGE {}
 sub HELP_MESSAGE {
@@ -88,6 +90,8 @@ sub HELP_MESSAGE {
   -t N : 各分子に対して、モンテカルロ法を N 回適用する。未指定だと200(trial)
   -o N : 未指定だと1。「Dに対して、Dを逆算した場合、候補の中からDが何番目に小さな数であるか」の数え方は通常は1始まりだが。0始まりにもできる。(offset)
   -s N : ランダムシードの指定。
+
+  -F   : 小数点以下d桁の数に対して、ありうる分数の一覧を出す。(プログラムの正しさの点検のためでもある。)
 
   使用例: 
     $0 -d1 # 簡単に。
