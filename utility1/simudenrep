@@ -70,7 +70,7 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
 }
 
 #do{ say join "\t", sprintf(".%0$o{d}d",$_), sort{$a<=>$b} keys %{$f2d[$_]} for 1..$u10/2 } if $o{F} ; 
-do{ say join "\t", sprintf("%.$o{d}f",$_/$u10), sort{$a<=>$b} keys %{$f2d[$_]} for 1..$#f2d } if $o{F} ; 
+do{ say join "\t", sprintf("%.$o{d}f", "$_"/"$u10")=~s/^0//r, sort{$a<=>$b} keys %{$f2d[$_]} for 1..$#f2d } if $o{F} ; 
 
 
 exit ;
@@ -130,5 +130,7 @@ sub HELP_MESSAGE {
 
   開発メモ: 
     * -@ で特定の分母の値またはその集合だけ、出力したい。
+    * 「ぴったり50%以下で計算するか」もしくは「50%未満で計算するか」の意味を考えたい。
+    * -F で $u10まで出すことに意味はあるか。分かりやすいから良いか。自明と見なして、$u10 -1にとどめた方が良いか?
 
 =cut
