@@ -6,7 +6,8 @@ use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use List::Util qw[ min ] ; 
 use POSIX qw [ floor ceil ] ;
 #use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
-use Math::Random::MT::Auto qw[ rand srand ] ; # Jerry D. Hedden 氏が作成。
+#use Math::Random::MT::Auto qw[ rand srand ] ; # Jerry D. Hedden 氏が作成。
+use Math::Random::MT::Auto qw[ rand ] ; # Jerry D. Hedden 氏が作成。
 use Time::HiRes qw[ gettimeofday tv_interval ]; 
 my $t0 = [gettimeofday] ;
 
@@ -17,7 +18,7 @@ if ( exists $o{T} ) {
     $cmd = "$0 -d1 -F 19%" when '19%' ; 
     $cmd = "$0 -d1 -F 19%" when '.19' ; 
     $cmd = "$0 -d1 -F 19%" when '20%' ; 
-    $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4357 となる。
+    $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4260 となる。
   } for $o{T} ;
   system $cmd ; 
   exit ;
