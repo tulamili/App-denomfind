@@ -27,8 +27,7 @@ my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のよう�
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
 
 for my $den ( 1 .. $u10 ) {  # den ← denominator
-  $SIG{INT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
-
+  $SIG{CONT} = sub { say STDERR BOLD YELLOW "Denominator = $den" } ;
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
   push @figs , int 0.5 + $u10 * $_ / $den for 1 .. $den - 1 ; # 
@@ -93,6 +92,10 @@ sub HELP_MESSAGE {
 
   -F   : 小数点以下d桁の数に対して、ありうる分数の一覧を出す。(プログラムの正しさの点検のためでもある。)
 
+  計算時間がかかる時の為に、HUPシグナルで、どの分母まで処理したのかを標準エラー出力に(黄色で)表示する。
+  このことにより Ctrl + Z で一時停止して、fg または bg のコマンドで再開すると、分母などの情報が出力される。
+  kill -s CONT %1 とか kill -s CONT 123445 のようなコマンドで走らせながら、分母情報を表示が可能。
+ 
   使用例: 
     $0 -d1 # 簡単に。
 
