@@ -51,7 +51,7 @@ my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のよう�
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
 
 for my $den ( $o{f} .. $u10 ) {  # den ← denominator
-  $SIG{CONT} = sub { say STDERR BOLD YELLOW "Denominator = $den ($0 @argv)" } ;
+  $SIG{CONT} = sub { *STDOUT->flush ; say STDERR BOLD YELLOW "Denominator = $den ($0 @argv)" } ;
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
   my @figs = () ;
   push @figs , int 0.5 + $u10 * $_ / $den for 1 .. ($den * $uFrac ) ; # $den-1
