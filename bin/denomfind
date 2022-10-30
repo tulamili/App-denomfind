@@ -85,7 +85,8 @@ my $denom = do { $o{g} =~ s/(.+),// && $1 } || 1 ; #　開始する分母の値 
 & main () ; 
 END{
   exit unless $count ; # 1個も分母を探索していないなら、すぐ終了。
-  print STDERR BOLD FAINT @nums . " ratios are given." if @nums > 1 && 0 ne ($o{2}//'') ;
+  exit if 0 eq ($o{2}//'') ;
+  print STDERR BOLD FAINT @nums . " ratios are given." if @nums > 1 ; #&& 0 ne ($o{2}//'') ;
   my $ud = [ 'down to','from','up to' ] -> [ ( $o{g} <=> 0 ) + 1 ] ; # 'from' はかなり無理矢理である。正常な使用の想定外。
   $denom += $o{g} > 0 ? -1 : $o{g} < 0 ? 1 : 0 ; # 1個戻す。
   say STDERR BOLD FAINT " $count denominators have found $ud $denom. ($Script)" ; 
