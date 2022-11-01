@@ -1,3 +1,4 @@
+English version : [here](pdf/manipulation221022sat.pdf) <- Not a tranlation of this page. Another explanations focusing on how to use the newly created command. 
 
 「分母逆算器」であるコマンドラインプログラムdenomfindおよび関連コマンドラインプログラムをこのレポジトリは提供する。
 
