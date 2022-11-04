@@ -50,7 +50,8 @@ my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のよう�
 # ↑小数点以下$o{d}桁の fig という数の並び(000-999)に対して、次を格納。
 # {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
 
-for my $den ( $o{f} .. $u10 ) {  # den ← denominator
+#for my $den ( $o{f} .. $u10 ) {  # den ← denominator
+for my $den ( 1 .. $u10 ) {  # den ← denominator
   $SIG{CONT} = sub { 
     *STDOUT->flush ; 
     my $s = tv_interval ($t0) ; 
@@ -60,6 +61,7 @@ for my $den ( $o{f} .. $u10 ) {  # den ← denominator
   my @figs = () ;
   push @figs , int 0.5 + $u10 * $_ / $den for 1 .. ($den * $uFrac ) ; # $den-1
   goto F if $o{F} ;
+  goto F if $den < $o{f} ; 
   my %freq ; 
   print "$den\t" ; # 1. 分母を出力
   for my $i ( 0 .. $o{t} - 1 ) { # $o{t}回の反復
