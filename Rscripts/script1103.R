@@ -14,14 +14,18 @@ library(matlab)
 points( meshgrid( 0:4*25 , 0:4/4) , pch=3 ,cex=2)
 points( meshgrid( 0:20*5 , 0:20/20) , pch=3 ,cex=0.6)
 points( meshgrid( 0:100*1 , 0:100/100) , pch=3 ,cex=0.01)
-plot.new()
----- ここまで 1
+#plot.new()
+#---- ここまで 1
 
 P <- array(NA,dim=c(100,100))
 for (k in 1:100) { 
  p <- 1 
  for( d in 1:100) { P[k,d] <- p <- p * ( 1- (1e-2*d)^k) }   
 }
+for (k in 1:12) { 
+	points ( 1:100, P[k,1:100], cex=0.2,type='l', lty=1 , col=rgb(0,0,0,0.4),lwd=2)
+	points ( 1:100, P[k,1:100], cex=0.2,type='l', lty=2 , col=rgb(1,1,1,0.4),lwd=2)
+}	
 
 ---- ここまで 2
 	
