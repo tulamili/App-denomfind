@@ -7,7 +7,8 @@ tmp$v <- tmp$v / 1e5
 library(areaplot)
 #areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=1, col=rainbow(24)[12], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)	
 t<-(7*1000-999):(7*1000);
-areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=.3, col=rainbow(24)[k+1], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)
+#areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=.3, col=rainbow(24)[k+1], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)
+areaplot (x=NA,y=NA,xlim=c(0,1e3),ylim=0:1, las=1 ,lwd=.3, col=rainbow(24)[k+1], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)
 for (l in 1:14 ){ 
 	k <- 15 - l 
 	t<-(k*1000-999):(k*1000);
@@ -28,12 +29,15 @@ for (k in 1:100) {
  p <- 1 
  for( d in 1:1000) {  p <- p * ( 1- (1e-3*d)^k) ; if ( p < 0.99) { P[k,d] <- p } ; if ( p<1e-4) { break}}   
 }
-for (k in 1:14) { 
+#for (k in 1:7) {   points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(0,0,1,0.1),lwd=8) } 
+#for (k in 8:15) {   points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(1,0,0,0.1),lwd=8) } 
+for (k in 1:8) {   points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rainbow(8,start=0.6,end=1, alpha=0.2)[k],lwd=8) } 
+for (k in 9:14) {   points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rainbow(24,start=0,end=0.5, alpha=0.2)[k-8],lwd=8) } 
   #points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(0,0,0,0.4),lwd=2)
   #points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=2 , col=rgb(1,1,1,0.4),lwd=2)
-  points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(0,0,1,0.1),lwd=8)
-  points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(0,0,0,0.1),lwd=8)
-}	
+
+  #points ( 1:1000, P[k,1:1000], cex=0.2,type='l', lty=1 , col=rgb(0,0,0,0.1),lwd=8)
+#}	
 
 ---- ここまで 2
 	
