@@ -16,7 +16,7 @@ for (l in 1:25 ){
 	areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=.3, col=rainbow(30)[k], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=T)
 }
 axis(2,0:4/4,c("0%","25%","50%","75%","100%"),las=1,cex.axis=1.4)
-axis(1,c(1,0:4*250),cex.axis=1.4)
+axis(1,c(1,1:4*250),cex.axis=1.4)
 library(matlab)
 points( meshgrid( 0:4*250 , 0:4/4) , pch=3 ,cex=2)
 points( meshgrid( 0:20*50 , 0:20/20) , pch=3 ,cex=0.6)
