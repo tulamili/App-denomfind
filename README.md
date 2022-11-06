@@ -52,3 +52,5 @@ English version : [here](pdf/manipulation221022sat.pdf) <- Not a tranlation of t
 ![スライド](pageimg/m035.png)
 ![スライド](pageimg/m036.png)
 ![スライド](pageimg/m037.png)
+![スライド](pageimg/m038.png)
+![スライド](pageimg/m039.png)
