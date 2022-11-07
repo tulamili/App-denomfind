@@ -8,7 +8,7 @@ use POSIX qw [ floor ceil ] ;
 use Time::HiRes qw[ gettimeofday tv_interval ]; 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
-getopts '5c:d:f:l:p:' , \my%o ; 
+getopts '.:5c:d:f:l:p:' , \my%o ; 
 
 # テストはここに書く。
 if ( exists $o{T} ) { 
@@ -28,25 +28,25 @@ END{
 }
 
 # ここから通常の動作部分。
-$o{F} = 1 unless $o{D} || $o{X} ; 
-$o{c} //= '' ;   # 値の間に挟む区切り文字
+my $p = $o{'.'} eq 0 ? '' : '.' ;
+$o{c} //= ' ' ;   # 値の間に挟む区切り文字
 $o{d} //= 1 ; # 10 ** $o{d} の数が最大となる(10の何乗まで調べるのか;主に何桁の分母について調べるのか)
 $o{p} //= 'f' ; # 表頭と表側以外の表中に、どんな値を並べるか?
 my $u10 = 10 ** $o{d} ; 
 $o{f} //= "1,$u10" ; # 開始する最小の分母
-my $emp = ' ' x $o{d} ;
+my $emp = ' ' x ( $o{d} + ( $o{'.'} eq 0 ? 0 : 1 ) ) ;
 my $dz = $o{5} ? $u10 *0.5 : $u10 - 1 ; # 出力の横方向の最後の数
-say join $o{c} , '-' x $o{d} ,' ' , map { sprintf "%0$o{d}d" , $_ } 1 .. $dz ;
 
+say join $o{c} , '-' x ($o{d}+1) ,' ' , map { sprintf "$p%0$o{d}d" , $_ } 1 .. $dz ; # 表頭
 for my $den ( 2 .. $u10 ) { 
   my @f ; 
   $f [ $dz ]  = undef ;
   for ( 1 .. ( $o{5} ? $den * 0.5 : $den -1) ) {  
     my $fig = int 0.5 + $u10 * $_ / $den ; # 小数点以下の数値。
-    $f [ $fig ] =  $o{p} eq 'X' ? 'X' x $o{d} : sprintf "%0$o{d}d" , $o{p}=~/n/i ? $_  : $fig ;
+    $f [ $fig ] =  $o{p} eq 'X' ? 'X' x $o{d} : sprintf "$p%0$o{d}d" , $o{p}=~/n/i ? $_  : $fig ;
   }
   my @out ; 
-  push @out , sprintf "%0$o{d}d" , $den == $u10 ? 0 : $den ; 
+  push @out , sprintf "%".($o{d}+1)."d" , $den ; 
   push @out , ':' ; 
   push @out , map { $_ // $emp } do { shift @f ; @f } ;
   my $str = join $o{c} , @out ;
@@ -85,6 +85,7 @@ sub HELP_MESSAGE {
    -l N : N 行ごとに下線で挟む。
    -p char : 表頭と表側以外の表中に、どんな値を並べるかを指定。nで分子の値。XでXをd桁並べる。未指定なら四捨五入した小数点以下の値。
    -5 : FIG (小数点以下の数) を横方向に並べるのに、上限を最大の10 ** d - 1 にはせず、その半分にちかい 10 ** d * 0.5 にする。
+   -. 0 : ピリオドを省略する。
 
 
  
