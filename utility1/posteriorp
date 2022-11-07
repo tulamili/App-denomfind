@@ -1,0 +1,113 @@
+#!/usr/bin/perl
+use 5.030 ; use warnings ; 
+use Getopt::Std ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use List::Util qw[ sum sum0 ] ; 
+use POSIX qw [ floor ceil ] ;
+use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
+#use Math::Random::MT::Auto qw[ rand srand ] ; # Jerry D. Hedden 氏が作成。 # srand が使えない! 
+#use Math::Random::MT::Auto qw[ rand ] ; # Jerry D. Hedden 氏が作成。# srand が使えない! 
+use Time::HiRes qw[ gettimeofday tv_interval ] ; 
+use List::BinarySearch qw[ binsearch  binsearch_pos  binsearch_range ] ; 
+use Memoize ; 
+memoize qw[ rp ] ; 
+
+
+my $t0 = [gettimeofday] ;
+my @argv = @ARGV ;
+getopts 'd:g:m:s:' , \my%o ; 
+my $seed = exists $o{s} ? srand $o{s} : srand ;
+#srand ( $seed ) ;
+# テストはここに書く。
+if ( exists $o{T} ) { 
+  my $cmd ; 
+  do { 
+    no warnings 'experimental::smartmatch' ; 
+    $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4260 となる。
+  } for $o{T} ;
+  system $cmd ; 
+  exit ;
+}
+
+# 終了時の処理
+END{ 
+  exit if exists $o{T} ;
+  exit if 0 eq ($o{2}//'') ; 
+  say STDERR RED BOLD FAINT "Random seed = $seed" if ! $o{F} ;
+  say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
+}
+
+$o{g} //= 10 ; # 何回反復するか
+$o{d} //= 1 ; # 10 ** $o{d} の数が最大となる(10の何乗まで調べるのか;主に何桁の分母について調べるのか)
+$o{m} //= 4 ;
+my $u5 = 10 ** $o{d} * 0.5 ; 
+my $u10 = 10 ** $o{d}  ; 
+
+## fig から 候補となる分母を参照するための表を作る。
+my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようになる
+for my $den ( 2 .. $u5 ) {  # den ← denominator
+  my @figs = () ; # その分母が小数点以下d桁でどんなfigureを生成するかを、この2行で求める。
+  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. ( $den - 1 ) ; # $den-1
+  $f2d [ $_ ] { $den } = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
+}
+
+## バイナリサーチされるリストを作る
+my @priorAcc ;
+do { my $s ; push @priorAcc , $s += 1 / $_ for 2 .. $u5 ; $_ /= $s for @priorAcc } ; # 各分母をどれだけの割合で生成するか関係するのが2番目の式
+# 使い方:   my $den = 2 + binsearch_pos { $a <=> $b } rand , @N ; ## Find the lowest index of a matching element, or best insert point.
+
+## 
+for ( 1 .. $o{g} ) { 
+  my $den = 2 + binsearch_pos { $a <=> $b } rand , @priorAcc ;
+  & den2p ( $den ) ; 
+}
+
+sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
+  my $den = $_[0] ;
+  my @cand = map {int 0.5 + $u10 * $_ / $den } map { 1 + int rand ( $den - 1 ) } 1 .. $o{m} ; 
+  #say YELLOW "$den : @cand" ;
+  if ( @cand ) { # この5行で、共通集合を計算。
+    my %comm ; 
+    $comm { $_ } = 1 for keys %{ $f2d [ shift @cand ] } ;
+    for my $c ( @cand ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
+    @cand = keys %comm ;
+  }
+  if(0){say join " " , $den , ":" , sort { $a <=> $b } @cand } ; 
+  say $den , "\t" , & rp ( $den ) / sum0 ( map { & rp ( $_ ) } @cand )  ;
+}
+
+sub rp ( $ ) {  return 1 / ( $_[0] * ( $_[0] - 1 ) ** $o{m} )  } ; 
+
+
+exit ;
+
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+=head1
+
+  $0 
+  オプション: 
+   -d N : 分母は2から10^N の半分までしらべる。
+   -g N : 何回実験するか。
+   -m N : 何個の分子を取り出すか。分母Dに対して1からD-1までのD-1通りの中から、一様にランダムに選ぶ。
+   -s N : ランダムシードの設定
+  使用例: 
+  開発メモ: 
+
+
+=cut
