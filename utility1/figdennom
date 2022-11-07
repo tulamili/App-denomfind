@@ -1,10 +1,7 @@
 #!/usr/bin/perl
-
 use 5.030 ; use warnings ; 
 use Getopt::Std ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
-use List::Util qw[ min ] ; 
-use POSIX qw [ floor ceil ] ;
 use Time::HiRes qw[ gettimeofday tv_interval ]; 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
@@ -92,6 +89,8 @@ sub HELP_MESSAGE {
   使用例: 
 
   開発メモ: 
-    * 対象となる分母の値が 1 から 10**d * 0.5 までにするか、10**d までにするかが、出力で一貫していない。オプションで指定できるようにしたい。
+    * 分母が50または500の前後の場合に、同じ割合近似値の出現が多いので、それはなぜかを考察するのが、このコマンドの作成の目的。
+    * その50の前後で、出力に並べる数に色を付けたかった。50より後(または前)で初めて出現した回数が少ない値に色を付けたかった。6段階で。
+    * 50 の所に横の棒状の蛍光灯があって、それより上の数値は黄色、それより下の数値はシアン色の半透明の物体があって、光を乱反射する様子を見せたかった。
 
 =cut
