@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+
+use 5.030 ; use warnings ; 
+use Getopt::Std ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use List::Util qw[ min ] ; 
+use POSIX qw [ floor ceil ] ;
+#use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
+#use Math::Random::MT::Auto qw[ rand srand ] ; # Jerry D. Hedden 氏が作成。
+#use Math::Random::MT::Auto qw[ rand ] ; # Jerry D. Hedden 氏が作成。
+use Time::HiRes qw[ gettimeofday tv_interval ]; 
+my $t0 = [gettimeofday] ;
+
+my @argv = @ARGV ;
+getopts '5c:d:f:DFX' , \my%o ; 
+
+if ( exists $o{T} ) { 
+  my $cmd = '' ; 
+  do { 
+    no warnings 'experimental::smartmatch' ; 
+  } for $o{T} ;
+  system $cmd ; 
+  exit ;
+}
+
+END{ 
+  exit if exists $o{T} ;
+  exit if 0 eq ($o{2}//'') ; 
+  #say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
+}
+
+$o{F} = 1 unless $o{D} || $o{X} ; 
+$o{c} //= '' ;   # 値の間に挟む区切り文字
+$o{d} //= 1 ; # 10 ** $o{d} の数が最大
+my $u10 = 10 ** $o{d} ; 
+$o{f} //= "1,$u10" ; # 開始する最小の分母
+my @f2d ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようになる
+my @d2f ; #  keys %{ $f2d{ $fig } }  == [ denom1, denom2, denom3 .. ]のようになる
+
+# ↑小数点以下$o{d}桁の fig という数の並び(000-999)に対して、次を格納。
+# {denom | あるN/denom を小数点以下 $o{d}まで四捨五入した結果 が fig に一致} 
+
+for my $den ( 1 .. $u10 ) {  # den ← denominator
+  # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
+  #my @figs = () ;
+  my @figs = map { int 0.5 + $u10 * $_ / $den } 1 .. $den * 0.5 ; # $den-1
+  #$f2d [ $_ ] [ $den ] = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
+  #$d2f [ $den ] [ int 0.5 + $u10 * $_ / $den ] = sprintf "%0$o{d}d" , $_ for 1 .. $den * 0.5  ; # <-- 変数の使い方は、これが分かりやすい。
+  $d2f [ $den ] [ int 0.5 + $u10 * $_ / $den ] = "X" x $o{d} for 1 .. $den * 0.5  ; # <-- 変数の使い方は、これが分かりやすい。
+}
+#print "$o{D} $o{F} $o{X}" ; exit ;
+my $emp = ' ' x $o{d} ;
+say join $o{c} , '-' x $o{d} ,' ' , map { sprintf "%0$o{d}d" , $_ } 1 .. ( $o{5} ? $u10 *0.5 : $u10 - 1 ) ; 
+#say join '' , '-' x $o{d} ,' ' , map { sprintf "%0$o{d}d" , $_ } 1 .. $u10*0.5 ;#( $o{5} ? $u10 *0.5 : $u10 - 1 ) ; 
+
+for my $den ( 2 .. $u10 ) { 
+  #say +($o{D}//0) . ($o{F}//0). ($o{X}//0) ; #exit ;
+  my @f ; 
+  #for ( 1 .. $den * 0.5 ) {
+  for ( 1 .. ($o{5} ? $den * 0.5 : $den -1) ) {  
+    $f [ int 0.5 + $u10 * $_ / $den ] = sprintf "%0$o{d}d" , $_ if $o{D} ;
+    $f [ int 0.5 + $u10 * $_ / $den ] = sprintf "%0$o{d}d" , int 0.5 + $u10 * $_ / $den if $o{F} ; 
+    $f [ int 0.5 + $u10 * $_ / $den ] = "X" x $o{d} if $o{X} ; 
+  }
+  my @out ; 
+  push @out , sprintf "%0$o{d}d" , $den == $u10 ? 0 : $den ; 
+  push @out , ':' ; 
+  #push @out , map { $_ // $emp } do { shift @{ $d2f[$den] } ; @{ $d2f[$den] }} ;
+  push @out , map { $_ // $emp } do { shift @f ; @f } ;
+  say join $o{c} , @out ;
+}
+
+exit ;
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+=head1
+
+  $0 [-d 1]  # figdennom が当初のコマンド名
+
+   横に fig 、縦にden 
+   色つきで 該当する分子(nom)を表示。
+
+
+  オプション: 
+   -d d : 対象となる分母の値が 1 から 10**d となる。(dは数値)
+   -f n1[,n2] : n1 から n2 まで調べる。 未実装。
+
+   -5 : FIG (小数点以下の数) を横方向に並べるのに、上限を最大の10 ** d - 1 にはせず、その半分にちかい 10 ** d * 0.5 にする。
+
+   -D : 表頭と表側以外の表中に、分子の値を並べる。
+   -F : 表頭と表側以外の表中に、四捨五入した小数点以下の値を並べる。
+   -X : 表頭と表側以外の表中に、Xを -d で指定される桁数並べた文字を、必要な箇所に埋める。
+ 
+  使用例: 
+
+  開発メモ: 
+    * 対象となる分母の値が 1 から 10**d * 0.5 までにするか、10**d までにするかが、出力で一貫していない。オプションで指定できるようにしたい。
+
+=cut
