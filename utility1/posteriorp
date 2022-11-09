@@ -2,7 +2,7 @@
 use 5.030 ; use warnings ; 
 use Getopt::Std ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
-use List::Util qw[ sum sum0 ] ; 
+use List::Util qw[ reduce sum sum0 ] ; 
 use POSIX qw [ floor ceil ] ;
 use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
 use Time::HiRes qw[ gettimeofday tv_interval ] ; 
@@ -73,17 +73,25 @@ sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
     for my $c ( @figs[ 1 .. $#figs ] ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
     @ocan = grep { $_ != $den } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
   }
+  @ocan = grep { $_ % $den > 0 } @ocan ; 
   my $osum = sum0 ( map { & rp ( $_ ) } @ocan )  ;
   my $oone = & rp ( $den ) ;
   my $value = ( $o{c} ? $osum : $oone )  / ($osum + $oone ) ;
   my $figstr = join ';' , map { s/^0//r } map { $_ / $u10 } sort { $a <=> $b } @figs ;
-  say join "\t" , $den , $value , $figstr , ( join ';' , sort { $a <=> $b } @ocan )  ;
+  say join "\t" , $den , $value , $figstr , ( join ';' , & npack ( sort { $a <=> $b } @ocan ) )  ;
 }
 
 sub rp ( $ ) {  
   return 1 / ( ( $_[0] - 1 ) ** $o{m} ) if 0 eq ($o{b}//'') ; 
   return 1 / ( $_[0] * ( $_[0] - 1 ) ** $o{m} )  
 } ; 
+
+
+sub npack ( @ )  { 
+  return '' if $#_ == -1 ;
+  #return reduce {  $a =~ /(\d+)$/ ; if( $b-$1==1 ){ "$a~$b" }else{ "$a:$b" } }  @_ ;
+  reduce{$a=~/(\d*)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @_ ;
+}
 
 
 exit ;
@@ -116,7 +124,7 @@ sub HELP_MESSAGE {
     1列目 : 元の分母 D
     2列目 : 疑似正答率
     3列目 : 生成した割合近似値いくつかをセミコロンで結合
-    4列目 : 元の分母 D より他の、分母の値の候補をセミコロンで結合
+    4列目 : 元の分母 D より他の、分母の値の候補をコロンで結合。ただしDの倍数を除く。
 
   オプション: 
 
