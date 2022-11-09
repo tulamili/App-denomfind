@@ -13,7 +13,7 @@ memoize qw[ rp ] ;
 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
-getopts 'd:g:m:s:t:' , \my%o ; 
+getopts 'b:cd:g:m:s:t:' , \my%o ; 
 my $seed = exists $o{s} ? srand $o{s} : srand ;
 #srand ( $seed ) ;
 # テストはここに書く。
@@ -52,6 +52,7 @@ for my $den ( 2 .. $o{t} ) {  # den ← denominator
 ## バイナリサーチされるリストを作る
 my @priorAcc ;
 do { my $s ; push @priorAcc , $s += 1 / $_ for 2 .. $o{t} ; $_ /= $s for @priorAcc } ; # 各分母をどれだけの割合で生成するか関係するのが2番目の式
+do { my $s ; push @priorAcc , $s ++ for 2 .. $o{t} ; $_ /= $s for @priorAcc } if 0 eq ($o{b}//''); # 各分母をどれだけの割合で生成するか関係するのが2番目の式
 # 使い方:   my $den = 2 + binsearch_pos { $a <=> $b } rand , @N ; ## Find the lowest index of a matching element, or best insert point.
 
 ## 
@@ -71,10 +72,16 @@ sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
     @cand = keys %comm ;
   }
   if(0){say join " " , $den , ":" , sort { $a <=> $b } @cand } ; 
-  say $den , "\t" , & rp ( $den ) / sum0 ( map { & rp ( $_ ) } @cand )  ;
+  #say $den , "\t" , & rp ( $den ) / sum0 ( map { & rp ( $_ ) } @cand )  ;
+  my $sum = sum0 ( map { & rp ( $_ ) } @cand )  ;
+  my $value =  & rp ( $den ) / $sum ;
+  say $den , "\t" , $value ;
 }
 
-sub rp ( $ ) {  return 1 / ( $_[0] * ( $_[0] - 1 ) ** $o{m} )  } ; 
+sub rp ( $ ) {  
+  return 1 / ( ( $_[0] - 1 ) ** $o{m} ) if 0 eq ($o{b}//'') ; 
+  return 1 / ( $_[0] * ( $_[0] - 1 ) ** $o{m} )  
+} ; 
 
 
 exit ;
@@ -105,6 +112,9 @@ sub HELP_MESSAGE {
    -m N : 何個の分子を取り出すか。分母Dに対して1からD-1までのD-1通りの中から、一様にランダムに選ぶ。
    -s N : ランダムシードの設定
    -t N : 分母の上限。未指定なら10 ** $o{d} /2 。
+
+   -b 0 : 通常は、分母の値Dに対して1/Dに比例する事前分布を入れているが、-b 0 でフラットになる。
+   -c   : 通常出力する確率に対して、その1の補数で出力するようにする。(後で1に近い値ロジット変換することを想定している。)
   使用例: 
   開発メモ: 
 
