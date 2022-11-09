@@ -171,7 +171,7 @@ sub dform ( $$ ) {
 }
 
 sub procQ () { 
-  my $str = reduce{$a=~/(\d*)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @_ ;
+  my $str = reduce{$a=~/(\d*)$/;if($b-$1==1){$a=~s/~\d+$//;"$a~$b"}else{"$a,$b"} } @_ ; # 連続する数は~で結ぶ。
   if ( @_ >= 2 ) { 
     my $gcd = bgcd map { $_ - $_[0] } @_ [ 1 .. $#_ ] ; 
     my $rem = $_[0] % $gcd ;
@@ -189,10 +189,6 @@ sub procQ () {
     } 
   }
   return $str ;
-}
-
-sub npack ( @ )  { 
-  return reduce {  $a =~ /(\d+)$/ ; if( $b-$1==1 ){ "$a~$b" }else{ "$a:$b" } }  @_ ;
 }
 
 sub yfilter ( $ ) { # メモ : state をいくつか使った読解のしにくいプログラムであること、もっと良い方法がありそうなこと。
