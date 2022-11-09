@@ -71,14 +71,15 @@ sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
     my %comm ; 
     $comm { $_ } = 1 for keys %{ $f2d [ $figs [ 0 ] ] } ;
     for my $c ( @figs[ 1 .. $#figs ] ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
-    @ocan = grep { $_ != $den } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
+    @ocan = sort { $a <=> $b } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
   }
-  @ocan = grep { $_ % $den > 0 } @ocan ; 
+  my $cd = $ocan[$#ocan]; for ( reverse 0..$#ocan ) { if ($ocan[$_]==$cd){$cd--;$#ocan--}else{$cd++;last }  } ;
+  @ocan = grep { $_ % $den > 0 } @ocan ;  # $denの倍数を除去
   my $osum = sum0 ( map { & rp ( $_ ) } @ocan )  ;
   my $oone = & rp ( $den ) ;
   my $value = ( $o{c} ? $osum : $oone )  / ($osum + $oone ) ;
   my $figstr = join ';' , map { s/^0//r } map { $_ / $u10 } sort { $a <=> $b } @figs ;
-  say join "\t" , $den , $value , $figstr , ( join ';' , & npack ( sort { $a <=> $b } @ocan ) )  ;
+  say join "\t" , $den , $value , $figstr , & npack ( @ocan ) . ",$cd+"   ;
 }
 
 sub rp ( $ ) {  
@@ -124,7 +125,7 @@ sub HELP_MESSAGE {
     1列目 : 元の分母 D
     2列目 : 疑似正答率
     3列目 : 生成した割合近似値いくつかをセミコロンで結合
-    4列目 : 元の分母 D より他の、分母の値の候補をコロンで結合。ただしDの倍数を除く。
+    4列目 : 元の分母 D より他の、分母の値の候補をコロンで結合。ただしDの倍数を除く。+を付けた最後の数は、その数より-tまで数があったことを示す。
 
   オプション: 
 
