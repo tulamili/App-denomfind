@@ -51,9 +51,11 @@ for my $den ( 2 .. $o{t} ) {  # den ← denominator
 
 ## バイナリサーチされるリストを作る
 my @priorAcc ;
-do { my $s ; push @priorAcc , $s += 1 / $_ for 2 .. $o{t} ; $_ /= $s for @priorAcc } ; # 各分母をどれだけの割合で生成するか関係するのが2番目の式
-do { my $s ; push @priorAcc , $s ++ for 2 .. $o{t} ; $_ /= $s for @priorAcc } if 0 eq ($o{b}//''); # 各分母をどれだけの割合で生成するか関係するのが2番目の式
-# 使い方:   my $den = 2 + binsearch_pos { $a <=> $b } rand , @N ; ## Find the lowest index of a matching element, or best insert point.
+if ( 0 ne ($o{b}//'') ) { 
+  do { my $s ; push @priorAcc , $s += 1 / $_ for 2 .. $o{t} ; $_ /= $s for @priorAcc } ; # 各分母をどれだけの割合で生成するか関係するのが2番目の式
+} else { 
+  do { my $s ; push @priorAcc , ++$s for 2 .. $o{t} ; $_ /= $s for @priorAcc } ; # 各分母をどれだけの割合で生成するか関係するのが2番目の式
+}# 使い方:   my $den = 2 + binsearch_pos { $a <=> $b } rand , @N ; ## Find the lowest index of a matching element, or best insert point.
 
 ## 
 for ( 1 .. $o{g} ) { 
