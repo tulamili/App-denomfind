@@ -64,15 +64,12 @@ for ( 1 .. $o{g} ) {
 sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
   my $den = $_[0] ;
   my @cand = map {int 0.5 + $u10 * $_ / $den } map { 1 + int rand ( $den - 1 ) } 1 .. $o{m} ; 
-  #say YELLOW "$den : @cand" ;
   if ( @cand ) { # この5行で、共通集合を計算。
     my %comm ; 
     $comm { $_ } = 1 for keys %{ $f2d [ shift @cand ] } ;
     for my $c ( @cand ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
     @cand = keys %comm ;
   }
-  if(0){say join " " , $den , ":" , sort { $a <=> $b } @cand } ; 
-  #say $den , "\t" , & rp ( $den ) / sum0 ( map { & rp ( $_ ) } @cand )  ;
   my $sum = sum0 ( map { & rp ( $_ ) } @cand )  ;
   my $value =  & rp ( $den ) / $sum ;
   say $den , "\t" , $value ;
