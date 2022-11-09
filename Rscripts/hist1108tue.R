@@ -29,4 +29,21 @@ for ( i in 1:16 )  {
   if( i==16 ) { axis(1,logit(ax), pp(ax)) ; axis (2,0:2/4,c("0","0.25","0.5"),las=2)}
   par(new=T)
 }
+# --- 
+# 翌日
+ax <- c (0.1^(1:3),0.5,1-0.1^(1:6))
+par(mai=c(1,2,1,1))
+plot(NA,xlab='',xaxt="n",xlim=c(2,50), ylim=c(-4,12),col=rainbow(15,v=0.8)[i],yaxt="n",ylab="") 
+for ( i in 1:10 ) {
+  d2 <- read.delim(sprintf("d2m%02d",i),F) ; 
+  x <- 2:50
+  y <- tapply(d2[,2],d2[,1],mean) ; 
+   #plot(x,logit(y),type="o",lwd=0.3,pch=20,xlab='',xaxt="n",ylim=c(-4,12),col=rainbow(15,v=0.8)[i],yaxt="n",ylab="") 
+  points(x,logit(y),type="o",lwd=1.2,pch=20,col=rainbow(3,v=0.8)[1+(i%%3)]) 
+  axis(1,c(2,5,10,15,20,25,30,40,50),cex.axis=2)
+  axis(2,logit(ax),pp(ax),cex.axis=2,las=1.5)
+  axis(4,-1:4*4,las=2,cex.axis=1.2)
+  abline(v=1:10*5,lwd=rep(c(0.2,0.4),5))
+  abline(h=logit(ax),lwd=rep(c(0.2,0.4),5))
+}
 
