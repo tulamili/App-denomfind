@@ -63,17 +63,19 @@ for ( 1 .. $o{g} ) {
 
 sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
   my $den = $_[0] ;
-  my @cand = map {int 0.5 + $u10 * $_ / $den } map { 1 + int rand ( $den - 1 ) } 1 .. $o{m} ; 
-  if ( @cand ) { # この5行で、共通集合を計算。
+  my @figs = map {int 0.5 + $u10 * $_ / $den } map { 1 + int rand ( $den - 1 ) } 1 .. $o{m} ; 
+  my @ocan = () ;
+  if ( @figs ) { # この5行で、共通集合を計算。
     my %comm ; 
-    $comm { $_ } = 1 for keys %{ $f2d [ shift @cand ] } ;
-    for my $c ( @cand ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
-    @cand = grep { $_ != $den } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
+    $comm { $_ } = 1 for keys %{ $f2d [ $figs [ 0 ] ] } ;
+    for my $c ( @figs[ 1 .. $#figs ] ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
+    @ocan = grep { $_ != $den } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
   }
-  my $osum = sum0 ( map { & rp ( $_ ) } @cand )  ;
+  my $osum = sum0 ( map { & rp ( $_ ) } @ocan )  ;
   my $oone = & rp ( $den ) ;
   my $value = ( $o{c} ? $osum : $oone )  / ($osum + $oone ) ;
-  say $den , "\t" , $value ;
+  my $figstr = join ';' , map { s/^0//r } map { $_ / $u10 } sort { $a <=> $b } @figs ;
+  say join "\t" , $den , $value , $figstr , ( join ';' , sort { $a <=> $b } @ocan )  ;
 }
 
 sub rp ( $ ) {  
@@ -104,18 +106,32 @@ sub HELP_MESSAGE {
 =head1
 
   $0 
+    「疑似正答率」を出力。元の分母Dと共に。2〜10^d/2のどれかの値の分母で生成された割合近似値(小数点以下d桁)がm個
+    与えられた場合に、分母の値の候補を逆算して、それらの中から元のDにどれだけ確信を持てるかをベイズの考え方で
+    計算する。
+
+   出力は4列。タブ文字区切り。
+    1列目 : 元の分母 D
+    2列目 : 疑似正答率
+    3列目 : 生成した割合近似値いくつかをセミコロンで結合
+    4列目 : 元の分母 D より他の、分母の値の候補をセミコロンで結合
+
   オプション: 
-   -d N : 分母は2から10^N の半分までしらべる。
-   -g N : 何回実験するか。
-   -m N : 何個の分子を取り出すか。分母Dに対して1からD-1までのD-1通りの中から、一様にランダムに選ぶ。
+
+   -d N : 分母は2から10^N の半分までしらべる。未指定なら1。(この数値をdとする。)
+   -g N : 何回実験するか。未指定なら10。(get)
+   -m N : 何個の分子を取り出すか(mとする)。未指定なら4。分母Dに対して1からD-1までのD-1通りの中から、一様にランダムに選ぶ。
    -s N : ランダムシードの設定
    -t N : 分母の上限。未指定なら10 ** $o{d} /2 。
 
    -b 0 : 通常は、分母の値Dに対して1/Dに比例する事前分布を入れているが、-b 0 でフラットになる。
    -c   : 通常出力する確率に対して、その1の補数で出力するようにする。(後で1に近い値ロジット変換することを想定している。)
+
   使用例: 
+
   開発メモ: 
    * オプションによる場合分けが数カ所で発生。これにより計算の効率が小さく下がる。大きく下がってないことを願う。
+   * 他に出力すべきものはないか?
 
 
 =cut
