@@ -71,15 +71,17 @@ sub den2p ( $ ) {  # 引数は分母の値。$o{m}の値を用いる。
     my %comm ; 
     $comm { $_ } = 1 for keys %{ $f2d [ $figs [ 0 ] ] } ;
     for my $c ( @figs[ 1 .. $#figs ] ) { grep { ! exists $f2d[$c]{$_} && delete $comm{$_} } keys %comm } ;
-    @ocan = sort { $a <=> $b } keys %comm ; # <-- - 当初はcandidate のつもり。$denを抜くことにした。
+    @ocan = sort { $a <=> $b } keys %comm ; # <-- - other candidate の略
   }
-  my $cd = $ocan[$#ocan]; for ( reverse 0..$#ocan ) { if ($ocan[$_]==$cd){$cd--;$#ocan--}else{$cd++;last }  } ;
-  @ocan = grep { $_ % $den > 0 } @ocan ;  # $denの倍数を除去
+  my @oc2 = @ocan ; 
+  @ocan = grep { $_ != $den } @ocan ;
+  my $cd = $oc2[$#oc2]; for ( reverse 0..$#oc2 ) { if ($oc2[$_]==$cd){$cd--;$#oc2--}else{$cd++;last }  } ;
+  @oc2 = grep { $_ % $den > 0 } @oc2 ;  # $denの倍数を除去
   my $osum = sum0 ( map { & rp ( $_ ) } @ocan )  ;
   my $oone = & rp ( $den ) ;
   my $value = ( $o{c} ? $osum : $oone )  / ($osum + $oone ) ;
   my $figstr = join ';' , map { s/^0//r } map { $_ / $u10 } sort { $a <=> $b } @figs ;
-  say join "\t" , $den , $value , $figstr , & npack ( @ocan ) . ",$cd+"   ;
+  say join "\t" , $den , $value , $figstr , & npack ( @oc2 ) . ",$cd+"   ;
 }
 
 sub rp ( $ ) {  
