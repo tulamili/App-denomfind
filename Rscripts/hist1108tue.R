@@ -31,17 +31,21 @@ for ( i in 1:16 )  {
 }
 # --- 
 # 翌日
-ax <- c (0.1^(1:3),0.5,1-0.1^(1:6))
-ax2 <- c (0.1^(1:3)%x%1:9,0.5,1-0.1^(1:6)%x%1:9)
-par(new=F,mai=c(0.5,1.7,0.1,0.5))
-plot(NA,xlab='',xaxt="n",xlim=c(2,50), ylim=c(-4,12),col=rainbow(15,v=0.8)[i],yaxt="n",ylab="") 
-axis(1,c(2,10,20,30,40,50),cex.axis=2)
-axis(2,logit(ax),pp(ax),cex.axis=2,las=1.5)
-axis(4,-1:4*4,las=2,cex.axis=1.)
-axis(4,-4:16,NA,las=2,cex.axis=1.)
-abline(v=1:10*5,lwd=rep(c(0.2,0.4),5))
-abline(h=logit(ax),lwd=0.4)
-abline(h=logit(ax2),lwd=0.12)
+ax <- c (0.1^(1:4),0.5,1-0.1^(1:6))
+ax2 <- c (0.1^(1:4)%x%1:9,0.5,1-0.1^(1:6)%x%1:9)
+
+PL0 <- function (xmax , lymin ) { 
+  par(new=F,mai=c(0.5,1.7,0.1,0.5))
+  plot(NA,xlab='',xaxt="n",xlim=c(2,xmax), ylim=c( lymin ,12),col=rainbow(15,v=0.8)[i],yaxt="n",ylab="") 
+  axis(1,c(2, 1:(xmax/10)*10 ),cex.axis=2)
+  axis(2,logit(ax),pp(ax),cex.axis=2,las=1.5)
+  axis(4,-1:4*4,las=2,cex.axis=1.)
+  axis(4,-4:16,NA,las=2,cex.axis=1.)
+  abline(v=  1:(xmax/5)*5  ,lwd=rep(c(0.2,0.4),5))
+  abline(h=logit(ax),lwd=0.4)
+  abline(h=logit(ax2),lwd=0.12)
+}
+PL0(50 , -4 )
 for ( i in 1:12 ) {
   d2 <- read.delim(sprintf("d2m%02d",i),F) ; 
   x <- 2:50
@@ -51,3 +55,14 @@ for ( i in 1:12 ) {
   points(x,logit(y),type="o",lwd=ifelse(i%%3==0,3.0,0.8),pch=20,col=hcl.colors(12)[ifelse(i>12,12,i)]) # [3-(i%%3)]) 
 }
 
+
+# その翌日 11/10(木曜))
+setwd("D2t100") 
+
+PL0 ( 100 , -5.5 )
+for ( i in 4:7 ) { 
+  d4 <- read.delim ( sprintf( "d2t100m%02dcb0" , i) , F)
+  x <- 2:50
+  y <- -tapply(d4$V2,d4$V1,mean)[1:49] ; 
+  points(x,logit(y),type="o",lwd=ifelse(i%%3==0,3.0,0.8),pch=20,col=hcl.colors(12)[ifelse(i>12,12,i)]) # [3-(i%%3)]) 
+}
