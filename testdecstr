@@ -1,0 +1,124 @@
+#!/usr/bin/perl
+use 5.030 ; use warnings ; 
+use Getopt::Std ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+#use List::Util qw[ reduce sum sum0 ] ; 
+#use POSIX qw [ floor ceil ] ;
+#use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
+use Time::HiRes qw[ gettimeofday tv_interval ] ; 
+#use List::BinarySearch qw[ binsearch  binsearch_pos  binsearch_range ] ; 
+#use Memoize ; 
+#memoize qw[ rp ] ; 
+
+my $t0 = [gettimeofday] ;
+my @argv = @ARGV ;
+getopts 'd:n:m:s:' , \my%o ; 
+my $seed = exists $o{s} ? srand $o{s} : srand ;
+#srand ( $seed ) ;
+# テストはここに書く。
+if ( exists $o{T} ) { 
+  my $cmd ; 
+  do { 
+    no warnings 'experimental::smartmatch' ; 
+    $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4260 となる。
+  } for $o{T} ;
+  system $cmd ; 
+  exit ;
+}
+
+
+$o{d} //= 4 ; 
+my $nf = $o{n} //= 0 ; # numeric flag ;
+my $u1 = my $u = '0.' . '0' x ( $o{d} - 1 ) . '1' ; # 0.001 などの数を作る。0.1 ** $o{d} による数値計算を避けた。
+my $u1000 = 10 ** $o{d} ; # 何回足すか。
+my $s = 0 ; 
+
+my @l2c  ; # 加算された変数の文字列長さに対するカウント
+my @l2f  ; # 加算された変数の文字列長さに対する最初の出現値 first 
+my @l2l  ; # 加算された変数の文字列長さに対する最後の出現値 last 
+my ($u0,$u9)=("inf", "-inf"); # 最小と最大
+my @L18 ;
+say UNDERLINE join "\t" , qw[figlen count first last];
+for my $i ( 1 .. $u1000 ) {
+  my $s0 = $s ; 
+  $u = "$u1" * do { my $t = int (rand (2*$o{m}+2)-$o{m}-1 ) if exists $o{m} ; "$t" } if exists $o{m} ;
+  $u0 = $u if $u < $u0 ; 
+  $u9 = $u if $u > $u9 ;   
+  #say $u ;
+  $s = & add () ;#  $sum , $u1 は隠した。
+  my $l = do { my $r = rindex($s, '.') ; $r < 0 ? 0 : length ($s) - $r - 1} ; # 小数点より後ろに何個文字があるか。
+  $l2c[$l] ++ ;
+  $l2f[$l] //= $s ; 
+  $l2l[$l] = $s ;   
+
+  push @L18 , qq["$s0" + "$u" => $s] if $l >= 18 ; 
+}
+
+for ( 0 .. $#l2c ) { 
+  next if ! defined $l2c[$_] ;
+  say join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] ;
+}
+say UNDERLINE join "\t", "sum : $s" , "unit : $u0 ~ $u9" ;
+say $_ for @L18 ;
+
+sub add ()  { 
+  $nf & 2 ? $nf & 1 ? $s+$u : $s+"$u" : $nf & 1 ? "$s"+$u : "$s"+"$u" ;
+  #{"$sum"+"$u1"}elsif($o{n}==1){"$sum"+$u1}elsif($o{n}==2){$sum+"$u1"}else{$sum+$u1} };  no warnings 'experimental::smartmatch' ;
+
+}
+
+
+# 終了時の処理
+END{ 
+  exit if exists $o{T} ;
+  exit if 0 eq ($o{2}//'') ; 
+  say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
+  say STDERR RED BOLD FAINT "Random seed = " . $seed if exists $o{m} ;
+}
+
+
+exit ;
+
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+
+=encoding utf8
+
+=head1
+
+  $0 
+
+    Perlの十進数文字列が、意図通りに動作するか確かめる。
+
+   - 単純に "0.001" を1000回足して 1になるか
+   - 0.001 を数値として1000回足すと1からどうずれるか。どこからずれるか。
+   - 0.001に整数の乱数をかけたものを多数加算するとどうなるか。
+
+
+  オプション: 
+
+   -d N : 小数点以下何桁まで考えるか。未指定なら4。
+   -n N : -n0なら文字列。-n1で足す方のみ数値。-n2で足し合わせた数を格納する変数のみ数値。-n3で足す方も足し合わせた数も数値で計算。
+   -m N : -NからNまでの乱数の整数をかけて足す。
+   -s N : 乱数シード
+
+  使用例: 
+
+  参照 : 
+   perldoc perlnumber 
+
+  開発メモ: 
+
+=cut
