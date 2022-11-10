@@ -42,6 +42,7 @@ say UNDERLINE join "\t" , qw[figlen count first last];
 for my $i ( 1 .. $u1000 ) {
   my $s0 = $s ; 
   $u = "$u1" * do { my $t = int (rand (2*$o{m}+2)-$o{m}-1 ) if exists $o{m} ; "$t" } if exists $o{m} ;
+    # int は 0方向に丸めるので、離散一様分布の乱数にならない(0に2倍の重みが集中)。floor で書き換えるべし。
   $u0 = $u if $u < $u0 ; 
   $u9 = $u if $u > $u9 ;   
   #say $u ;
@@ -111,13 +112,13 @@ sub HELP_MESSAGE {
 
    -d N : 小数点以下何桁まで考えるか。未指定なら4。
    -n N : -n0なら文字列。-n1で足す方のみ数値。-n2で足し合わせた数を格納する変数のみ数値。-n3で足す方も足し合わせた数も数値で計算。
-   -m N : -NからNまでの乱数の整数をかけて足す。
+   -m N : -NからNまでの乱数の整数をかけ算して、足し合わせる。
    -s N : 乱数シード
 
   使用例: 
 
   参照 : 
-   perldoc perlnumber 
+   perldoc perlnumber : C言語によるコンパイラが処理するとのことである。
 
   開発メモ: 
 
