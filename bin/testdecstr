@@ -2,72 +2,80 @@
 use 5.030 ; use warnings ; 
 use Getopt::Std ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
-#use List::Util qw[ reduce sum sum0 ] ; 
-#use POSIX qw [ floor ceil ] ;
-#use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
+use POSIX qw [ floor ceil ] ;
 use Time::HiRes qw[ gettimeofday tv_interval ] ; 
-use List::Util qw[ uniq ] ; 
-#use List::BinarySearch qw[ binsearch  binsearch_pos  binsearch_range ] ; 
-#use Memoize ; 
-#memoize qw[ rp ] ; 
+use List::Util qw[ uniq min max] ; 
 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
-getopts 'd:n:m:s:' , \my%o ; 
+getopts 'd:m:n:p:s:u:T:' , \my%o ; 
 my $seed = exists $o{s} ? srand $o{s} : srand ;
-#srand ( $seed ) ;
 # テストはここに書く。
 if ( exists $o{T} ) { 
   my $cmd ; 
   do { 
     no warnings 'experimental::smartmatch' ; 
-    $cmd = "$0 -t 3e4 -s1" when 's1'  ; # シードを固定。Math::Random::MT qw[ rand srand ] で最後の出力は 4260 となる。
+    $cmd = "$0 -d3 -m5 -p3 -s58116144" when 'p3'  ; 
+    $cmd = "$0 -d1 -m5 -p3 -u5e3 -s1988716594" when "d1" ;
+    $cmd = "$0 -d10" when "10B" ; # B = billion ; 2万秒 つまり5時間半。
+    $cmd = "$0 -d6" when "1M" ;  # M = million ; 2秒で終わる
+    $cmd = "$0 -d10 -m+5 -p3 -u1e6" when 'p5m3' ;
+    $cmd = "$0 -d3 -n3" when '72' ; # 0.001 を文字列では無くて数値として72回足すと、ずれが起こることが分かる。
   } for $o{T} ;
+  say STDOUT BOLD YELLOW $cmd ;
   system $cmd ; 
   exit ;
 }
 
-
-$o{d} //= 4 ; 
+$SIG{INT} = sub { &showResult() ; exit } ; 
+$o{d} //= 4 ; # 小数点以下が何桁の数を対象にするか
+$o{p} //= 1 ; # 何回かけ算をするか(1回の加算につき)
+$o{u} //= 10 ** $o{d} ; # 何回足すか。
 my $nf = $o{n} //= 0 ; # numeric flag ;
 my $u1 = my $u = '0.' . '0' x ( $o{d} - 1 ) . '1' ; # 0.001 などの数を作る。0.1 ** $o{d} による数値計算を避けた。
-my $u1000 = 10 ** $o{d} ; # 何回足すか。
-my $s = 0 ; 
-
+my $s = 0 ; # 加算した結果を格納する。
+my $count = 0 ; # 何回足したか
 my @l2c  ; # 加算された変数の文字列長さに対するカウント
 my @l2f  ; # 加算された変数の文字列長さに対する最初の出現値 first 
 my @l2l  ; # 加算された変数の文字列長さに対する最後の出現値 last 
 my ($u0,$u9)=("inf", "-inf"); # 最小と最大
-my @LL;
-say UNDERLINE join "\t" , qw[figlen count first last];
-for my $i ( 1 .. $u1000 ) {
-  my $s0 = $s ; 
-  $u = "$u1" * do { my $t = int (rand (2*$o{m}+2)-$o{m}-1 ) if exists $o{m} ; "$t" } if exists $o{m} ;
-    # int は 0方向に丸めるので、離散一様分布の乱数にならない(0に2倍の重みが集中)。floor で書き換えるべし。
+my @LL ;
+my $too = $o{d} ; # 小数点以下何桁までを許容するか
+my $aftp = sub($) { my $r = rindex($_[0], '.') ; $r < 0 ? 0 : length ($_[0]) - $r - 1 } ; # ピリオドの後に何桁あるか?
+my $m = $o{m} // 0 ;
+my $mult = sub () { $m =~ /^\+/ ? 1+floor rand $m : $m =~ /^\-/ ? -ceil rand(-$m) : floor -$m + rand 1+2*$m} ;
+say UNDERLINE join "\t" , qw[aft. count first last];
+for my $i ( 1 .. $o{u} ) {
+  my $s0 = $s ; # $sの更新前の結果を$s0に残す。
+  do { $u = "$u1" ; $u = $u * $mult ->() for 1 .. $o{p} } if exists $o{m} ;
+  push @LL , $u if $aftp -> ($u) > $too ;
   $u0 = $u if $u < $u0 ; 
   $u9 = $u if $u > $u9 ;   
-  #say $u ;
   $s = & add () ;#  $sum , $u1 は隠した。
-  my $l = do { my $r = rindex($s, '.') ; $r < 0 ? 0 : length ($s) - $r - 1} ; # 小数点より後ろに何個文字があるか。
+  my $l = $aftp -> ($s) ;
   $l2c[$l] ++ ;
   $l2f[$l] //= $s ; 
   $l2l[$l] = $s ;   
-
-  push @LL, [ qq[$s <= "$s0" + "$u" ] , $s , $s0 ] if $l >= 15 ; 
+  if ( $l > $too && $aftp ->( $s0 ) <= $too ) { 
+    push @LL, [ qq[$s <= "$s0" + "$u" ] . "( 1/" . min(abs($s0),abs($u))/abs($s) . " )"  , $s , $s0 ]
+  }
 }
+showResult () ;
+exit ;
 
-for ( 0 .. $#l2c ) { 
-  next if ! defined $l2c[$_] ;
-  say join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] ;
+sub showResult { 
+  state $str = sub { join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] } ;
+  for ( 0 .. $#l2c ) { 
+    next if ! defined $l2c[$_] ;
+    say $_ < $#l2c ? $str -> () : UNDERLINE $str ->() ;
+  }
+  say join "\t", "sum : " . UNDERLINE ($s) , ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , "x $count times" ;
+  say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } @LL;
 }
-say join "\t", "sum : " . UNDERLINE ($s) , "unit : $u0 ~ $u9" ;
-#say $_ for uniq map { $_->[0] } sort { $a->[1] cmp $$b->[1] } @L18 ;
-say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } @LL;
 
 sub add ()  { 
+  $count ++ ;
   $nf & 2 ? $nf & 1 ? $s+$u : $s+"$u" : $nf & 1 ? "$s"+$u : "$s"+"$u" ;
-  #{"$sum"+"$u1"}elsif($o{n}==1){"$sum"+$u1}elsif($o{n}==2){$sum+"$u1"}else{$sum+$u1} };  no warnings 'experimental::smartmatch' ;
-
 }
 
 
@@ -114,8 +122,10 @@ sub HELP_MESSAGE {
 
    -d N : 小数点以下何桁まで考えるか。未指定なら4。
    -n N : -n0なら文字列。-n1で足す方のみ数値。-n2で足し合わせた数を格納する変数のみ数値。-n3で足す方も足し合わせた数も数値で計算。
-   -m N : -NからNまでの乱数の整数をかけ算して、足し合わせる。
+   -m N : -NからNまでの乱数の整数をかけ算して、足し合わせる。(Nの頭に+があれば1〜Nまで、-があれば-Nから-1までの、整数の乱数 )
+   -p N : 1回足すたびに、N回かけ算する。(powerのつもりだが同じ数を掛けるとは限らない)
    -s N : 乱数シード
+   -u N ; 何回加算を行うか。未指定であれば、-d で指定された数を D とすると 10**D回。
 
   使用例: 
 
