@@ -39,8 +39,8 @@ PL0 <- function (xmax , lymin ) {
   plot(NA,xlab='',xaxt="n",xlim=c(2,xmax), ylim=c( lymin ,12),col=rainbow(15,v=0.8)[i],yaxt="n",ylab="") 
   axis(1,c(2, 1:(xmax/10)*10 ),cex.axis=2)
   axis(2,logit(ax),pp(ax),cex.axis=2,las=1.5)
-  axis(4,-1:4*4,las=2,cex.axis=1.)
-  axis(4,-4:16,NA,las=2,cex.axis=1.)
+  axis(4,-2:4*4,las=2,cex.axis=1.)
+  axis(4,-8:16,NA,las=2,cex.axis=1.)
   abline(v=  1:(xmax/5)*5  ,lwd=rep(c(0.2,0.4),5))
   abline(h=logit(ax),lwd=0.4)
   abline(h=logit(ax2),lwd=0.12)
@@ -60,9 +60,21 @@ for ( i in 1:12 ) {
 setwd("D2t100") 
 
 PL0 ( 100 , -5.5 )
-for ( i in 4:7 ) { 
-  d4 <- read.delim ( sprintf( "d2t100m%02dcb0" , i) , F)
-  x <- 2:50
-  y <- -tapply(d4$V2,d4$V1,mean)[1:49] ; 
+for ( i in 1:12 ) { 
+  d4 <- read.delim ( sprintf( "d2t100m%02d" , i) , F)
+  x <- 2:100
+  y <- tapply(d4$V2,d4$V1,mean)[1:99] ; 
   points(x,logit(y),type="o",lwd=ifelse(i%%3==0,3.0,0.8),pch=20,col=hcl.colors(12)[ifelse(i>12,12,i)]) # [3-(i%%3)]) 
+  print(i)
+}
+
+
+dev.new()
+PL0 ( 100 , -5.5 )
+for ( i in 3:9 ) { 
+  d4 <- read.delim ( sprintf( "d2t100m%02dcb0" , i) , F)
+  x <- 2:100
+  y <- tapply(d4$V2,d4$V1,mean)[1:99] ; 
+  points(x,logit(y),type="o",lwd=ifelse(i%%3==0,3.0,0.8),pch=20,col=hcl.colors(12)[ifelse(i>12,12,i)]) # [3-(i%%3)]) 
+  print(i)
 }
