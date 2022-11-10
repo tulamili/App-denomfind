@@ -6,6 +6,7 @@ use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 #use POSIX qw [ floor ceil ] ;
 #use Math::Random::MT qw[ rand srand ] ; # Florent Angly 氏が作成。
 use Time::HiRes qw[ gettimeofday tv_interval ] ; 
+use List::Util qw[ uniq ] ; 
 #use List::BinarySearch qw[ binsearch  binsearch_pos  binsearch_range ] ; 
 #use Memoize ; 
 #memoize qw[ rp ] ; 
@@ -37,7 +38,7 @@ my @l2c  ; # 加算された変数の文字列長さに対するカウント
 my @l2f  ; # 加算された変数の文字列長さに対する最初の出現値 first 
 my @l2l  ; # 加算された変数の文字列長さに対する最後の出現値 last 
 my ($u0,$u9)=("inf", "-inf"); # 最小と最大
-my @L18 ;
+my @LL;
 say UNDERLINE join "\t" , qw[figlen count first last];
 for my $i ( 1 .. $u1000 ) {
   my $s0 = $s ; 
@@ -52,15 +53,16 @@ for my $i ( 1 .. $u1000 ) {
   $l2f[$l] //= $s ; 
   $l2l[$l] = $s ;   
 
-  push @L18 , qq["$s0" + "$u" => $s] if $l >= 18 ; 
+  push @LL, [ qq[$s <= "$s0" + "$u" ] , $s , $s0 ] if $l >= 15 ; 
 }
 
 for ( 0 .. $#l2c ) { 
   next if ! defined $l2c[$_] ;
   say join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] ;
 }
-say UNDERLINE join "\t", "sum : $s" , "unit : $u0 ~ $u9" ;
-say $_ for @L18 ;
+say join "\t", "sum : " . UNDERLINE ($s) , "unit : $u0 ~ $u9" ;
+#say $_ for uniq map { $_->[0] } sort { $a->[1] cmp $$b->[1] } @L18 ;
+say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } @LL;
 
 sub add ()  { 
   $nf & 2 ? $nf & 1 ? $s+$u : $s+"$u" : $nf & 1 ? "$s"+$u : "$s"+"$u" ;
