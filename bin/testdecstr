@@ -27,7 +27,8 @@ if ( exists $o{T} ) {
   exit ;
 }
 
-$SIG{INT} = sub { &showResult() ; exit } ; 
+$SIG{INT} = sub { &showResult() ; exit } ; # Ctrl+Zして再開したタイミング、および、Ctrl+Tのタイミングで途中情報を出す。
+$SIG{INFO} = $SIG{CONT} = sub { &showResult() ; say STDERR BOLD FAINT CYAN "The elapsed second = " .tv_interval ($t0) } ;
 $o{d} //= 4 ; # 小数点以下が何桁の数を対象にするか
 $o{p} //= 1 ; # 何回かけ算をするか(1回の加算につき)
 $o{u} //= 10 ** $o{d} ; # 何回足すか。
@@ -43,12 +44,13 @@ my @LL ;
 my $too = $o{d} ; # 小数点以下何桁までを許容するか
 my $aftp = sub($) { my $r = rindex($_[0], '.') ; $r < 0 ? 0 : length ($_[0]) - $r - 1 } ; # ピリオドの後に何桁あるか?
 my $m = $o{m} // 0 ;
-my $mult = sub () { $m =~ /^\+/ ? 1+floor rand $m : $m =~ /^\-/ ? -ceil rand(-$m) : floor -$m + rand 1+2*$m} ;
+my $m0 ; # 一時保管用途。
+my $mult = sub () { $m0 = $m =~ /^\+/ ? 1+floor rand $m : $m =~ /^\-/ ? -ceil rand(-$m) : floor -$m + rand 1+2*$m} ;
 say UNDERLINE join "\t" , qw[aft. count first last];
 for my $i ( 1 .. $o{u} ) {
   my $s0 = $s ; # $sの更新前の結果を$s0に残す。
   do { $u = "$u1" ; $u = $u * $mult ->() for 1 .. $o{p} } if exists $o{m} ;
-  push @LL , $u if $aftp -> ($u) > $too ;
+  push @LL , [$u , $m0, $s ] if $aftp -> ($u) > $too ;
   $u0 = $u if $u < $u0 ; 
   $u9 = $u if $u > $u9 ;   
   $s = & add () ;#  $sum , $u1 は隠した。
