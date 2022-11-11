@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+use 5.030 ; use warnings ; 
+use Getopt::Std ; 
+use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use POSIX qw [ floor ceil ] ;
+use Time::HiRes qw[ gettimeofday tv_interval ] ; 
+use List::Util qw[ uniq min max] ; 
+
+my $t0 = [gettimeofday] ;
+my @argv = @ARGV ;
+getopts 'd:n:u:' , \my%o ; 
+# テストはここに書く。
+if ( exists $o{T} ) { 
+  my $cmd ; 
+  do { 
+    no warnings 'experimental::smartmatch' ; 
+    $cmd = "$0" when '0'  ; 
+  } for $o{T} ;
+  say STDOUT BOLD YELLOW $cmd ;
+  system $cmd ; 
+  exit ;
+}
+
+$SIG{INT} = sub { &showResult() ; exit } ; # Ctrl+Zして再開したタイミング、および、Ctrl+Tのタイミングで途中情報を出す。
+$SIG{INFO} = $SIG{CONT} = sub { &showResult() ; say STDERR BOLD FAINT CYAN "The elapsed second = " .tv_interval ($t0) } ;
+
+$o{d} //= 1 ; # 小数点以下何桁までを対象にするか。
+$o{u} //= 10 ** $o{d} - 1 ;
+my $from = do { $o{u} =~ s/^(.*),// and $1 } || 1 ; 
+my $nf = $o{n} // 0 ; # Numeric Flag のつもり
+my $u1 = my $u = '0.' . '0' x ( $o{d} - 1 ) . '1' ; # 0.001 などの数を作る。0.1 ** $o{d} による数値計算を避けた。
+my $count = 0 ;
+my $aftp = sub($) { my $r = rindex($_[0], '.') ; $r < 0 ? 0 : length ($_[0]) - $r - 1 } ; # ピリオドの後に何桁あるか?
+my $mn = sub($$) { ($nf & 2 ? ${$_[0]} : "${$_[0]}" ) - ($nf & 1 ? ${$_[1]} : "${$_[1]}" ) } ; # minus 
+my $ad = sub($$) { ($nf & 2 ? ${$_[0]} : "${$_[0]}" ) + ($nf & 1 ? ${$_[1]} : "${$_[1]}" ) } ; # add 
+my %T ; # 集計表
+my (%C,@C) ; # 列位置
+for my $i ( $from .. $o{u} ) 
+{  
+  my $ni = "$u1" * "$i" ; 
+  for my $j ( $from .. $o{u} ) 
+  { 
+    my $nj = "$u1" * "$j" ;  # <-- マイナスは使ってたが、止めた。
+    my $res = $mn-> ( \$ni , \$nj ) ;
+    my $resx = sprintf "%0.$o{d}f" , $res ;
+    my $e = floor 1 * ( 10 ** ( 15 + $o{d} ) )  * ("$res" - "$resx") + 0.5 ;
+    do { $T{$i}{$j} = $i<$j? $e : $i-$j; $C{$j} = 1;say join " " , $ni , $nj, $e if 0} if $aftp->($res) > $o{d} ;
+  }
+}
+
+@C = sort { $a <=> $b } keys %C ; 
+say join "" , "--:" , map { substr "   " . $_ , -3 } @C ; 
+for my $i ( sort { $a <=> $b } keys %T ){
+  say join "" , "$i:" , map { substr ( "   " . ($T{$i}{$_}//"") , -3 )  } @C ; 
+}
+
+showResult () ;
+exit ;
+
+sub showResult { 
+}
+
+sub mn ($$)  {  # minus  を2文字に縮めた
+  $count ++ ;
+  #$nf & 2 ? $nf & 1 ? $x+$y : $x+"$y" : $nf & 1 ? "$x"+$y : "$x"+"$y" ;
+  return + ($nf & 2 ? ${$_[0]} : "${$_[0]}" ) - ($nf & 1 ? ${$_[1]} : "${$_[1]}" ) ;
+}
+
+
+# 終了時の処理
+END{ 
+  exit if exists $o{T} ;
+  exit if 0 eq ($o{2}//'') ; 
+  say STDERR RED BOLD FAINT "The elapsed second = " .tv_interval ($t0) ;
+}  
+
+exit ;
+
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ;
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if $ARGV[1] eq 'opt' ? m/^\ +\-/ : s/^=head1// .. s/^=cut// ;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+=encoding utf8
+
+=head1
+
+  $0 
+
+    Perlの十進数文字列が、意図通りに動作するか確かめる。
+    出力は表である。縦の並びは、引かれる前の数。横の並びは、どれだけ引くか。
+    行列状の数の、左下は単純に引き算の結果、右上は10進文字列で期待される場合の結果よりも「誤差」がどれだけ生じたかを10**(15+d)倍。
+    (ここでdは -d で指定した数を表す。)
+
+  オプション: 
+
+   -d N : 小数点以下何桁まで考えるか。未指定なら4。
+   -n N : -n0なら文字列。-n1で足す方のみ数値。-n2で足し合わせた数を格納する変数のみ数値。-n3で足す方も足し合わせた数も数値で計算。
+   -u N2 もしくは -u N1,N2 ; N1が未指定であれば、1。N1からN2まで整数に 0.1**dを乗じた数に対して、引き算の操作を行う。
+
+  使用例: 
+
+  参照 : 
+   perldoc perlnumber : C言語によるコンパイラが処理するとのことである。
+
+  開発メモ: 
+    * 演算子オーバーロードが気になる。
+
+=cut
