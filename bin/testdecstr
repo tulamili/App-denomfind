@@ -8,7 +8,7 @@ use List::Util qw[ uniq min max] ;
 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
-getopts 'd:m:n:p:s:u:T:' , \my%o ; 
+getopts 'd:m:n:p:s:u:JT:' , \my%o ; 
 my $seed = exists $o{s} ? srand $o{s} : srand ;
 # テストはここに書く。
 if ( exists $o{T} ) { 
@@ -31,7 +31,8 @@ $SIG{INT} = sub { &showResult() ; exit } ; # Ctrl+Zして再開したタイミ�
 $SIG{INFO} = $SIG{CONT} = sub { &showResult() ; say STDERR BOLD FAINT CYAN "The elapsed second = " .tv_interval ($t0) } ;
 $o{d} //= 4 ; # 小数点以下が何桁の数を対象にするか
 $o{p} //= 1 ; # 何回かけ算をするか(1回の加算につき)
-$o{u} //= 10 ** $o{d} ; # 何回足すか。
+my $u10 = 10 ** $o{d} ; 
+$o{u} //= $u10 ; # # 何回足すか。
 my $nf = $o{n} //= 0 ; # numeric flag ;
 my $u1 = my $u = '0.' . '0' x ( $o{d} - 1 ) . '1' ; # 0.001 などの数を作る。0.1 ** $o{d} による数値計算を避けた。
 my $s = 0 ; # 加算した結果を格納する。
@@ -40,17 +41,25 @@ my @l2c  ; # 加算された変数の文字列長さに対するカウント
 my @l2f  ; # 加算された変数の文字列長さに対する最初の出現値 first 
 my @l2l  ; # 加算された変数の文字列長さに対する最後の出現値 last 
 my ($u0,$u9)=("inf", "-inf"); # 最小と最大
-my @LL ;
+my %LL ;  # 小数点以下が長いもの
+my $LLc ; # その個数
 my $too = $o{d} ; # 小数点以下何桁までを許容するか
 my $aftp = sub($) { my $r = rindex($_[0], '.') ; $r < 0 ? 0 : length ($_[0]) - $r - 1 } ; # ピリオドの後に何桁あるか?
 my $m = $o{m} // 0 ;
 my $m0 ; # 一時保管用途。
 my $mult = sub () { $m0 = $m =~ /^\+/ ? 1+floor rand $m : $m =~ /^\-/ ? -ceil rand(-$m) : floor -$m + rand 1+2*$m} ;
-say UNDERLINE join "\t" , qw[aft. count first last];
+
+
 for my $i ( 1 .. $o{u} ) {
   my $s0 = $s ; # $sの更新前の結果を$s0に残す。
+  if ( $o{J} ) {
+    my $x = ceil 0.5 + $u10 * $s ; 
+    my $y = ceil -$u10 + rand 2*$u10 ; 
+    $u = ( $y - $x ) * "$u1" ;
+  }
+
   do { $u = "$u1" ; $u = $u * $mult ->() for 1 .. $o{p} } if exists $o{m} ;
-  push @LL , [$u , $m0, $s ] if $aftp -> ($u) > $too ;
+  #push @LL , [$u , $m0, $s ] if $aftp -> ($u) > $too ;
   $u0 = $u if $u < $u0 ; 
   $u9 = $u if $u > $u9 ;   
   $s = & add () ;#  $sum , $u1 は隠した。
@@ -58,21 +67,37 @@ for my $i ( 1 .. $o{u} ) {
   $l2c[$l] ++ ;
   $l2f[$l] //= $s ; 
   $l2l[$l] = $s ;   
+  
   if ( $l > $too && $aftp ->( $s0 ) <= $too ) { 
-    push @LL, [ qq[$s <= "$s0" + "$u" ] . "( 1/" . min(abs($s0),abs($u))/abs($s) . " )"  , $s , $s0 ]
+    my $times = $s == 0 ? 1 : min(abs($s0),abs($u))/abs($s) ;
+    #push @LL, [ qq[$s <= "$s0" + "$u" ] . "( 1/" . $times . " )"  , $s , $s0 ]
+    #$LL { [ qq[$s <= "$s0" + "$u" ] . "( 1/" . $times . " )"  , $s , $s0 ] } = 1 ;
+    $LL { qq["$s0" + "$u"] } = [$s,$times] ;
+    $LLc ++ ;
   }
 }
+
 showResult () ;
 exit ;
 
 sub showResult { 
-  state $str = sub { join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] } ;
+  state $str = sub { join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] ne $l2f[$_] ? $l2l[$_] : () } ;
+  # 1. 最初の概略 (合計値など)
+  say join "\t", "sum : " . UNDERLINE ($s) . " ;" ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , ": $count times" ;
+  # 2. 小数点以下の文字数に応じて、表にして出力
+  say UNDERLINE join "\t" , qw[aft. count first last];
   for ( 0 .. $#l2c ) { 
     next if ! defined $l2c[$_] ;
     say $_ < $#l2c ? $str -> () : UNDERLINE $str ->() ;
   }
-  say join "\t", "sum : " . UNDERLINE ($s) , ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , "x $count times" ;
-  say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } @LL;
+  # 3. 小数点以下の文字数が多いものを出力。
+  #say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } keys %LL;
+  my @OO ; 
+  push @OO , "$LL{$_}[0] <= $_ ; 1/$LL{$_}[1]"  for sort { $LL{$a}[1] <=> $LL{$b}[1] } keys %LL;
+  say join "\t" , scalar @OO , $LLc , 100*$LLc/$count . "%" ; 
+  say join "\n" , splice @OO, 0, 4 ; 
+  say ".." ; 
+  say join "\n" , splice @OO, -2, 2 ;   
 }
 
 sub add ()  { 
@@ -130,6 +155,9 @@ sub HELP_MESSAGE {
    -p N : 1回足すたびに、N回かけ算する。(powerのつもりだが同じ数を掛けるとは限らない)
    -s N : 乱数シード
    -u N ; 何回加算を行うか。未指定であれば、-d で指定された数を D とすると 10**D回。
+
+   -J   ; 加算結果が[0,1]の中でジャンプするように、乱数を用いて加算する(負の値の加算もある)。( -m とは異なるやり方である。)
+   -T str : このコマンドのテスト。いくつかパターンが用意している。与える変数については、本プログラムの前半を直接見るのが良いであろう。
 
   使用例: 
 
