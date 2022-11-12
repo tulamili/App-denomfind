@@ -46,10 +46,11 @@ my %LL ;  # 小数点以下が長いもの
 my $LLc ; # その個数
 my $too = $o{d} ; # 小数点以下何桁までを許容するか
 my $aftp = sub($) { my $r = rindex($_[0], '.') ; $r < 0 ? 0 : length ($_[0]) - $r - 1 } ; # ピリオドの後に何桁あるか?
+my $bftp = sub($) { my $p = index($_[0], '.') ; $p < 0 ? length ($_[0]) : $p - 1 } ; # ピリオドの前に何桁あるか?
 my $m = $o{m} // 0 ;
 my $m0 ; # 一時保管用途。
 my $mult = sub () { $m0 = $m =~ /^\+/ ? 1+floor rand $m : $m =~ /^\-/ ? -ceil rand(-$m) : floor -$m + rand 1+2*$m} ;
-
+my $d3 = sub($) { $_[0] =~ s/(?<=\d)(?=(\d\d\d)+($|\D))/,/gr } ;# 3桁区切り　千進法表記
 
 for my $i ( 1 .. $o{u} ) {
   my $s0 = $s ; # $sの更新前の結果を$s0に残す。
@@ -66,8 +67,10 @@ for my $i ( 1 .. $o{u} ) {
   $s = & add () ;#  $sum , $u1 は隠した。
   my $l = $aftp -> ($s) ;
   $l2{c}[$l] ++ ;
-  $l2{f}[$l] //= $s ; 
-  $l2{l}[$l] = $s ;   
+  if ( $s !~/e/ ) { 
+    $l2{f}[$l] //= $s ; 
+    $l2{l}[$l] = $s ;   
+  }
   if ( $s =~/e/ ) { 
     $l2{fe}[$l] //= $s ; 
     $l2{le}[$l] = $s ;   
@@ -88,20 +91,30 @@ exit ;
 sub showResult { 
   state $str = sub {my $t = $_ ; join "\t" , "$t:" , map{ $l2{$_}[$t]//''} qw[c f l fe le ] } ;
   # 1. 最初の概略 (合計値など)
-  say join "\t", "sum : " . UNDERLINE ($s) . " ;" ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , ": $count times" ;
+  say join "\t", "sum : " . UNDERLINE ($s) . " ;" ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , ": ".$d3->($count)." times" ;
   # 2. 小数点以下の文字数に応じて、表にして出力
-  say UNDERLINE join "\t" , qw[aft. count first last first_with_e last_with_e];
+  say UNDERLINE join "\t" , qw[aft.: count first last first_with_e last_with_e];
   for ( 0 .. - 1 + scalar @{$l2{c}} ) { 
     next if ! defined $l2{c}[$_] ;
     #say $_ < $#l2c ? $str -> () : UNDERLINE $str ->() ;
     say $_ < - 1 + scalar @{$l2{c}} ? $str -> () : UNDERLINE $str ->() ;
   }
   # 3. 小数点以下の文字数が多いものを出力。
+  return if ! $LLc ;
+  say join "\t" , $d3->($LLc) , UNDERLINE 100*$LLc/$count . "%" ; # 全般的な統計情報
+  my %D ; # $D[小数点より前の桁数][先頭文字]
+  do { $_ = $LL{$_}[1] ; $D { $bftp -> ( $_ ) }[ substr $_,0,1 ] ++ } for keys %LL ;
+  say UNDERLINE join "\t" , "bfP:" , 1..9;
+  for ( sort { $a <=> $b } keys %D ) { 
+    say join "\t" , "$_:" , splice @{ [ map { $_ // "0"} @{$D{$_}} ] } , 1, 9; 
+  }
+  
+
   #say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } keys %LL;
   my @OO ; 
   push @OO , "$LL{$_}[0] <= $_ ; 1/$LL{$_}[1]"  for sort { $LL{$a}[1] <=> $LL{$b}[1] } keys %LL;
-  say join "\t" , scalar @OO , $LLc , 100*$LLc/$count . "%" ; 
   say join "\n" , splice @OO, 0, 4 ; 
+  return if ! @OO ;
   say ".." ; 
   say join "\n" , splice @OO, -2, 2 ;   
 }
