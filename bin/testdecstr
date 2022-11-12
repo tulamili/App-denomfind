@@ -37,9 +37,10 @@ my $nf = $o{n} //= 0 ; # numeric flag ;
 my $u1 = my $u = '0.' . '0' x ( $o{d} - 1 ) . '1' ; # 0.001 などの数を作る。0.1 ** $o{d} による数値計算を避けた。
 my $s = 0 ; # 加算した結果を格納する。
 my $count = 0 ; # 何回足したか
-my @l2c  ; # 加算された変数の文字列長さに対するカウント
-my @l2f  ; # 加算された変数の文字列長さに対する最初の出現値 first 
-my @l2l  ; # 加算された変数の文字列長さに対する最後の出現値 last 
+my %l2  ; # $l2{c}[$l]は加算された変数の文字列長さに対するカウント 
+#my @l2f  ; # $l2{f}[$l] 加算された変数の文字列長さに対する最初の出現値 first 
+#my @l2l  ; #  $l2{l}[$l] で加算された変数の文字列長さに対する最後の出現値 last 
+# l2{fe}[$l] も l2{le}[$l]も使う。
 my ($u0,$u9)=("inf", "-inf"); # 最小と最大
 my %LL ;  # 小数点以下が長いもの
 my $LLc ; # その個数
@@ -64,9 +65,13 @@ for my $i ( 1 .. $o{u} ) {
   $u9 = $u if $u > $u9 ;   
   $s = & add () ;#  $sum , $u1 は隠した。
   my $l = $aftp -> ($s) ;
-  $l2c[$l] ++ ;
-  $l2f[$l] //= $s ; 
-  $l2l[$l] = $s ;   
+  $l2{c}[$l] ++ ;
+  $l2{f}[$l] //= $s ; 
+  $l2{l}[$l] = $s ;   
+  if ( $s =~/e/ ) { 
+    $l2{fe}[$l] //= $s ; 
+    $l2{le}[$l] = $s ;   
+  }
   
   if ( $l > $too && $aftp ->( $s0 ) <= $too ) { 
     my $times = $s == 0 ? 1 : min(abs($s0),abs($u))/abs($s) ;
@@ -81,14 +86,15 @@ showResult () ;
 exit ;
 
 sub showResult { 
-  state $str = sub { join "\t" , "$_:" , $l2c[$_] , $l2f[$_] , $l2l[$_] ne $l2f[$_] ? $l2l[$_] : () } ;
+  state $str = sub {my $t = $_ ; join "\t" , "$t:" , map{ $l2{$_}[$t]//''} qw[c f l fe le ] } ;
   # 1. 最初の概略 (合計値など)
   say join "\t", "sum : " . UNDERLINE ($s) . " ;" ,"adding unit : $u0" . ( $u0 eq $u9 ? '' : " ~ $u9" ) , ": $count times" ;
   # 2. 小数点以下の文字数に応じて、表にして出力
-  say UNDERLINE join "\t" , qw[aft. count first last];
-  for ( 0 .. $#l2c ) { 
-    next if ! defined $l2c[$_] ;
-    say $_ < $#l2c ? $str -> () : UNDERLINE $str ->() ;
+  say UNDERLINE join "\t" , qw[aft. count first last first_with_e last_with_e];
+  for ( 0 .. - 1 + scalar @{$l2{c}} ) { 
+    next if ! defined $l2{c}[$_] ;
+    #say $_ < $#l2c ? $str -> () : UNDERLINE $str ->() ;
+    say $_ < - 1 + scalar @{$l2{c}} ? $str -> () : UNDERLINE $str ->() ;
   }
   # 3. 小数点以下の文字数が多いものを出力。
   #say $_ for uniq map {$$_[0]} sort { $$a[1] <=> $$b[1] || $$a[2] <=> $$b[2] } keys %LL;
