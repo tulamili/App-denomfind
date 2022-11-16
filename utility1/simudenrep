@@ -12,7 +12,7 @@ use Time::HiRes qw[ gettimeofday tv_interval ];
 my $t0 = [gettimeofday] ;
 
 my @argv = @ARGV ;
-getopts '2:d:f:Fm:o:s:t:T:' , \my%o ; 
+getopts '2:d:f:Fm:o:r:s:t:T:' , \my%o ; 
 
 if ( exists $o{T} ) { 
   my $cmd ; 
@@ -58,8 +58,8 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
     say STDERR BOLD YELLOW "Denominator = $den ($0 @argv ; $s seconds from start)" 
   } ;
   # その分母が小数点以下d桁でどんなfigureを生成するかを、次の2行で求める。
-  my @figs = () ;
-  push @figs , int 0.5 + $u10 * $_ / $den for 1 .. ($den * $uFrac ) ; # $den-1
+  my @figs = map { $u10 * $_ / $den } 1 .. ( $den * $uFrac ) ; 
+  @figs = ! exists $o{r} ? map { int 0.5 + $_ } @figs : $o{r} =~ m/f/i ? map { floor $_ } @figs  : map { ceil $_ } @figs ;
   goto F if $o{F} ;
   goto F if $den < $o{f} ; 
   my %freq ; 
@@ -74,7 +74,6 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
       $Nth += keys %comm ;
     }
     $freq{$Nth} ++ ; # 頻度表に集計である。
-    
   }
   say join "\t" , map { ${_} , $freq{$_} } sort { $a <=> $b } keys %freq ; 
   F: $f2d [ $_ ] { $den } = 1 for @figs ; # <-- 変数の使い方は、これが分かりやすい。
@@ -82,7 +81,6 @@ for my $den ( 1 .. $u10 ) {  # den ← denominator
 
 #do{ say join "\t", sprintf(".%0$o{d}d",$_), sort{$a<=>$b} keys %{$f2d[$_]} for 1..$u10/2 } if $o{F} ; 
 do{ say join "\t", sprintf("%.$o{d}f", "$_"/"$u10")=~s/^0//r, sort{$a<=>$b} keys %{$f2d[$_]} for 1..$#f2d } if $o{F} ; 
-
 
 exit ;
 
@@ -128,7 +126,10 @@ sub HELP_MESSAGE {
   -f N : 計算対象となる分母の最小値を指定。
   -m N : 1〜 10**d の各分母Dに対して、1からD-1の中から取れる限りN個の整数を取り出して、それぞれを分子とする。未指定だと3。(multitude?)
   -t N : 各分子に対して、モンテカルロ法を N 回適用する。未指定だと200(trial)
+
   -o N : 未指定だと1。「Dに対して、Dを逆算した場合、候補の中からDが何番目に小さな数であるか」の数え方は通常は1始まりだが。0始まりにもできる。(offset)
+  -r f : 丸めの方法は切り捨てとする。 四捨五入ではなくなる。
+  -r c : 丸めの方法は切り上げとする。 四捨五入ではなくなる。
   -s N : ランダムシードの指定。
 
   -F   : 小数点以下d桁の数に対して、ありうる分数の一覧を出す。(プログラムの正しさの点検のためでもある。)
