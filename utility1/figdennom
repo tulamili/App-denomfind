@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 use 5.030 ; use warnings ; 
-use Getopt::Std ; 
+use Getopt::Std ;  
+use POSIX qw [ ceil floor ] ; 
 use Term::ANSIColor qw [ :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use Time::HiRes qw[ gettimeofday tv_interval ]; 
 my $t0 = [gettimeofday] ;
 my @argv = @ARGV ;
-getopts '.:5c:d:f:l:p:' , \my%o ; 
+getopts '.:5CFc:d:f:l:p:' , \my%o ; 
 
 # テストはここに書く。
 if ( exists $o{T} ) { 
@@ -39,7 +40,8 @@ for my $den ( 2 .. $u10 ) {
   my @f ; 
   $f [ $dz ]  = undef ;
   for ( 1 .. ( $o{5} ? $den * 0.5 : $den -1) ) {  
-    my $fig = int 0.5 + $u10 * $_ / $den ; # 小数点以下の数値。
+    my $y =  $u10 * $_ / $den ;
+    my $fig = $o{C} ? ceil $y : $o{F} ? floor $y  : floor 0.5 + $u10 * $_ / $den ; # 小数点以下の数値。
     $f [ $fig ] =  $o{p} eq 'X' ? 'X' x $o{d} : sprintf "$p%0$o{d}d" , $o{p}=~/n/i ? $_  : $fig ;
   }
   my @out ; 
@@ -77,12 +79,16 @@ sub HELP_MESSAGE {
 
 
   オプション: 
+   -c str : 間に挟む文字列
    -d d : 対象となる分母の値が 1 から 10**d となる。(dは数値)
-   # -f n1[,n2] : n1 から n2 まで調べる。 未実装。
+   -f n1[,n2] : n1 から n2 まで調べる。 <-- きちんと実装したか調べよ。
    -l N : N 行ごとに下線で挟む。
    -p char : 表頭と表側以外の表中に、どんな値を並べるかを指定。nで分子の値。XでXをd桁並べる。未指定なら四捨五入した小数点以下の値。
    -5 : FIG (小数点以下の数) を横方向に並べるのに、上限を最大の10 ** d - 1 にはせず、その半分にちかい 10 ** d * 0.5 にする。
    -. 0 : ピリオドを省略する。
+
+   -C : 切り上げ
+   -F : 切り捨て
 
 
  
