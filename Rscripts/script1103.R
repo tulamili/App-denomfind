@@ -1,4 +1,4 @@
-tmp <- read.delim ( "tmp") #[101:200,]
+tmp <- read.delim ( "d2MM12") 
 tmp$v <- tmp$v / 1e6
 library(areaplot)
 areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=1, col=rainbow(24)[12], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)

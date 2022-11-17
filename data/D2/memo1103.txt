@@ -1,0 +1,1 @@
+for i in `seq 12` ; do awk -vOFS="\t" "BEGIN{if($i==1){print \"m\",\"d\",\"v\"}}NR>1{print $i,NR-1,\$1  }" d2M$i.C   ; done > d2MM12
