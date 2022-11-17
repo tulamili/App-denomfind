@@ -1,9 +1,26 @@
+#
+# 各分母に対してモンテカルロ法で 割合近似値の整数%をM個算出した上で、分母の値を逆算した場合に、その候補の最小値が元の分母Dに一致する確率
+# のグラフを描く。
+# 
+#
+#
+
+# 11月3日の操作に相当:
+# for i in `seq 12` ; do midproc d2M$i > d2M$i.C ; done 
+# for i in `seq 12` ; do awk -vOFS="\t" "BEGIN{if($i==1){print \"m\",\"d\",\"v\"}}NR>1{print $i,NR-1,\$1  }" d2M$i.C   ; done > d2MM12
+
+# 11月17日(木)の操作 :
+# for i in {01..40} ; do ../../utility1/midproc d2m${i}F1e6 > d2m${i}.10 ; done
+# for i in {01..40} ; do awk -vOFS="\t" "BEGIN{if($i==1){print \"m\",\"d\",\"v\"}}NR>1{print $i,NR-1,\$1  }" d2M$i.10   ; done > d2MM40
+
+
 tmp <- read.delim ( "d2MM12") 
+tmp <- read.delim ( "d2MM40") 
 tmp$v <- tmp$v / 1e6
 library(areaplot)
-areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=1, col=rainbow(24)[12], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)
-for (l in 1:12) { 
-	k <- 13 - l 
+areaplot (NA,NA,xlim=c(2,100),ylim=0:1, las=1 ,lwd=1, col=rainbow(24)[12], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=F)
+for (l in 1:40) { #12 
+	k <- 41 - l # 13
 	t<-(k*100-99):(k*100);
 	#if ( k>1){ par(new=T) }
 	areaplot (x=tmp$d[t], y=tmp$v[t], las=1 ,lwd=1, col=rainbow(24)[k+1], xaxt="n",yaxt="n", xaxs="i", yaxs="i", xlab="",ylab="", add=T)
