@@ -56,4 +56,26 @@ English version : [here](pdf/manipulation221022sat.pdf) <- Not a tranlation of t
 ![スライド](pageimg/m039.png)
 
 ![スライド](pageimg/m040.png)
+![スライド](pageimg/m041.png)
+![スライド](pageimg/m042.png)
+![スライド](pageimg/m043.png)
+![スライド](pageimg/m044.png)
+![スライド](pageimg/m045.png)
+![スライド](pageimg/m046.png)
+![スライド](pageimg/m047.png)
+![スライド](pageimg/m048.png)
+![スライド](pageimg/m049.png)
+
+![スライド](pageimg/m050.png)
+![スライド](pageimg/m051.png)
+![スライド](pageimg/m052.png)
+![スライド](pageimg/m053.png)
+![スライド](pageimg/m054.png)
+![スライド](pageimg/m055.png)
+![スライド](pageimg/m056.png)
+![スライド](pageimg/m057.png)
+![スライド](pageimg/m058.png)
+![スライド](pageimg/m059.png)
+
+![スライド](pageimg/m060.png)
 
