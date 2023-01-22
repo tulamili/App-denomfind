@@ -86,8 +86,9 @@ my $denom = do { $o{g} =~ s/(.+),// && $1 } || 1 ; #　開始する分母の値 
 END{
   exit unless $count ; # 1個も分母を探索していないなら、すぐ終了。
   exit if 0 eq ($o{2}//'') ;
-  my $sum = 0 ; $sum = "$sum" + "$_" for @nums ;
-  print STDERR BOLD FAINT @nums . " ratios are given (sum=$sum)." if @nums > 1 ; #&& 0 ne ($o{2}//'') ;
+  my $sum = 0 ; $sum = "$sum" + "$_" for @nums ; 
+  my $bf = color 'bold faint white' ;
+  print STDERR $bf . scalar @nums . " ratios are given (sum=" . color('reset bold yellow').($sum) . $bf .")." if @nums > 1 ; 
   my $ud = [ 'down to','from','up to' ] -> [ ( $o{g} <=> 0 ) + 1 ] ; # 'from' はかなり無理矢理である。正常な使用の想定外。
   $denom += $o{g} > 0 ? -1 : $o{g} < 0 ? 1 : 0 ; # 1個戻す。
   say STDERR BOLD FAINT " $count denominators have found $ud $denom. ($Script)" ; 
