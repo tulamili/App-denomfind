@@ -13,7 +13,7 @@ cpanm -U App::denomfind
 ■ コマンド denomfind を使えるようにする方法 : 
 
    インストール:  	cpanm    App::denomfind
-アンインストール: 	cpanm –U App::defnomfind
+アンインストール: 	cpanm –U App::denomfind
 
 cpanmが使えない場合は、cpan でも良いが、インストールしたモジュールの
 アンインストールが難しくなるであろう。
